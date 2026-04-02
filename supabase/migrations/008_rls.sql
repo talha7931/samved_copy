@@ -34,7 +34,7 @@ CREATE POLICY profiles_select_own ON profiles
 CREATE POLICY profiles_select_zone ON profiles
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('je', 'de', 'assistant_commissioner')
+      ('je', 'ae', 'ee', 'assistant_commissioner')
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
@@ -42,7 +42,7 @@ CREATE POLICY profiles_select_zone ON profiles
 CREATE POLICY profiles_select_admin ON profiles
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('city_engineer', 'commissioner', 'super_admin')
+      ('city_engineer', 'commissioner', 'standing_committee', 'super_admin')
   );
 
 -- Users can update their own profile (limited fields)
@@ -84,10 +84,20 @@ CREATE POLICY tickets_je_update ON tickets
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
--- DE: see zone tickets
-CREATE POLICY tickets_de_select ON tickets
+-- AE: see zone tickets
+CREATE POLICY tickets_ae_select ON tickets
   FOR SELECT USING (
-    (SELECT role FROM profiles WHERE id = auth.uid()) = 'de'
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'ae'
+    AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
+  );
+
+CREATE POLICY tickets_ae_update ON tickets
+  FOR UPDATE USING (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'ae'
+    AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
+  )
+  WITH CHECK (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'ae'
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
@@ -133,24 +143,24 @@ CREATE POLICY tickets_accounts_select ON tickets
 CREATE POLICY tickets_admin_select ON tickets
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('commissioner', 'city_engineer', 'super_admin')
+      ('commissioner', 'standing_committee', 'ee', 'city_engineer', 'super_admin')
   );
 
 -- City Engineer / Super Admin: insert + update, but NEVER delete
 CREATE POLICY tickets_admin_insert ON tickets
   FOR INSERT WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('city_engineer', 'super_admin')
+      ('ee', 'city_engineer', 'super_admin')
   );
 
 CREATE POLICY tickets_admin_update ON tickets
   FOR UPDATE USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('city_engineer', 'super_admin')
+      ('ee', 'city_engineer', 'super_admin')
   )
   WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('city_engineer', 'super_admin')
+      ('ee', 'city_engineer', 'super_admin')
   );
 
 
@@ -196,24 +206,24 @@ CREATE POLICY line_items_contractor_insert ON bill_line_items
 CREATE POLICY line_items_admin_select ON bill_line_items
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   );
 
 CREATE POLICY line_items_admin_update ON bill_line_items
   FOR UPDATE USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   )
   WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   );
 
 -- Zone officers can read ONLY their own zone's line items (scoped through parent bill)
 CREATE POLICY line_items_zone_read ON bill_line_items
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('assistant_commissioner', 'de')
+      ('assistant_commissioner', 'ae')
     AND bill_id IN (
       SELECT id FROM contractor_bills
       WHERE zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
@@ -223,7 +233,7 @@ CREATE POLICY line_items_zone_read ON bill_line_items
 -- Commissioner: cross-zone read access (strategic oversight)
 CREATE POLICY line_items_commissioner_read ON bill_line_items
   FOR SELECT USING (
-    (SELECT role FROM profiles WHERE id = auth.uid()) = 'commissioner'
+    (SELECT role FROM profiles WHERE id = auth.uid()) IN ('commissioner', 'standing_committee')
   );
 
 
@@ -248,31 +258,31 @@ CREATE POLICY bills_contractor_update ON contractor_bills
 CREATE POLICY bills_accounts_select ON contractor_bills
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   );
 
 CREATE POLICY bills_accounts_update ON contractor_bills
   FOR UPDATE USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   )
   WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('accounts', 'city_engineer', 'super_admin')
+      ('accounts', 'ee', 'city_engineer', 'super_admin')
   );
 
 -- Zone officers can read zone bills
 CREATE POLICY bills_zone_select ON contractor_bills
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('assistant_commissioner', 'de')
+      ('assistant_commissioner', 'ae')
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
 -- Commissioner: read all bills
 CREATE POLICY bills_commissioner ON contractor_bills
   FOR SELECT USING (
-    (SELECT role FROM profiles WHERE id = auth.uid()) = 'commissioner'
+    (SELECT role FROM profiles WHERE id = auth.uid()) IN ('commissioner', 'standing_committee')
   );
 
 
@@ -292,7 +302,7 @@ CREATE POLICY contractors_admin ON contractors
 CREATE POLICY contractors_zone_read ON contractors
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('assistant_commissioner', 'de', 'commissioner')
+      ('assistant_commissioner', 'ae', 'ee', 'commissioner', 'standing_committee')
   );
 
 
