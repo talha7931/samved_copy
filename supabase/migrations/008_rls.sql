@@ -34,7 +34,7 @@ CREATE POLICY profiles_select_own ON profiles
 CREATE POLICY profiles_select_zone ON profiles
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('je', 'ae', 'ee', 'assistant_commissioner')
+      ('je', 'ae', 'assistant_commissioner')
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
@@ -42,7 +42,7 @@ CREATE POLICY profiles_select_zone ON profiles
 CREATE POLICY profiles_select_admin ON profiles
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('city_engineer', 'commissioner', 'standing_committee', 'super_admin')
+      ('city_engineer', 'commissioner', 'standing_committee', 'ee', 'super_admin')
   );
 
 -- Users can update their own profile (limited fields)
@@ -150,7 +150,7 @@ CREATE POLICY tickets_admin_select ON tickets
 CREATE POLICY tickets_admin_insert ON tickets
   FOR INSERT WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('ee', 'city_engineer', 'super_admin')
+      ('city_engineer', 'super_admin')
   );
 
 CREATE POLICY tickets_admin_update ON tickets
