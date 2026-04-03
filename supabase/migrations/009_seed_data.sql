@@ -130,6 +130,7 @@ Demo Credentials (create in Supabase Auth Dashboard):
   je.zone7@ssr.demo       / Demo@SSR2025   → role: je, zone 7
   je.zone8@ssr.demo       / Demo@SSR2025   → role: je, zone 8
   ae.zone4@ssr.demo       / Demo@SSR2025   → role: ae, zone 4
+  de.zone4@ssr.demo       / Demo@SSR2025   → role: de, zone 4
   ee@ssr.demo             / Demo@SSR2025   → role: ee
   zo.zone4@ssr.demo       / Demo@SSR2025   → role: assistant_commissioner, zone 4
   cityengineer@ssr.demo   / Demo@SSR2025   → role: city_engineer
@@ -148,7 +149,7 @@ DECLARE
   v_citizen_id UUID;
   v_je1_id UUID; v_je2_id UUID; v_je3_id UUID; v_je4_id UUID;
   v_je5_id UUID; v_je6_id UUID; v_je7_id UUID; v_je8_id UUID;
-  v_ae4_id UUID; v_contractor_id UUID; v_mukadam_id UUID; v_zo4_id UUID;
+  v_ae4_id UUID; v_de4_id UUID; v_contractor_id UUID; v_mukadam_id UUID; v_zo4_id UUID;
   v_ee_id UUID; v_ce_id UUID; v_comm_id UUID; v_sc_id UUID;
   v_acct_id UUID; v_admin_id UUID;
 BEGIN
@@ -163,6 +164,7 @@ BEGIN
   SELECT id INTO v_je7_id FROM auth.users WHERE email = 'je.zone7@ssr.demo';
   SELECT id INTO v_je8_id FROM auth.users WHERE email = 'je.zone8@ssr.demo';
   SELECT id INTO v_ae4_id FROM auth.users WHERE email = 'ae.zone4@ssr.demo';
+  SELECT id INTO v_de4_id FROM auth.users WHERE email = 'de.zone4@ssr.demo';
   SELECT id INTO v_contractor_id FROM auth.users WHERE email = 'contractor.z4@ssr.demo';
   SELECT id INTO v_mukadam_id FROM auth.users WHERE email = 'mukadam.z4@ssr.demo';
   SELECT id INTO v_zo4_id FROM auth.users WHERE email = 'zo.zone4@ssr.demo';
@@ -215,6 +217,11 @@ BEGIN
   IF v_ae4_id IS NOT NULL THEN
     INSERT INTO profiles (id, full_name, phone, role, zone_id, employee_id, designation) VALUES
       (v_ae4_id, 'Sanjay Raut', '9876543219', 'ae', 4, 'SMC-AE-401', 'Assistant Engineer') ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_de4_id IS NOT NULL THEN
+    INSERT INTO profiles (id, full_name, phone, role, zone_id, employee_id, designation) VALUES
+      (v_de4_id, 'Vishram Rane', '9876543235', 'de', 4, 'SMC-DE-401', 'Deputy Engineer') ON CONFLICT DO NOTHING;
   END IF;
 
   IF v_ee_id IS NOT NULL THEN

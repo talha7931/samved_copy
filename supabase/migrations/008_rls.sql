@@ -34,7 +34,7 @@ CREATE POLICY profiles_select_own ON profiles
 CREATE POLICY profiles_select_zone ON profiles
   FOR SELECT USING (
     (SELECT role FROM profiles WHERE id = auth.uid()) IN
-      ('je', 'ae', 'assistant_commissioner')
+      ('je', 'ae', 'de', 'assistant_commissioner')
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 
@@ -98,6 +98,23 @@ CREATE POLICY tickets_ae_update ON tickets
   )
   WITH CHECK (
     (SELECT role FROM profiles WHERE id = auth.uid()) = 'ae'
+    AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
+  );
+
+-- DE: see zone tickets
+CREATE POLICY tickets_de_select ON tickets
+  FOR SELECT USING (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'de'
+    AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
+  );
+
+CREATE POLICY tickets_de_update ON tickets
+  FOR UPDATE USING (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'de'
+    AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
+  )
+  WITH CHECK (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'de'
     AND zone_id = (SELECT zone_id FROM profiles WHERE id = auth.uid())
   );
 

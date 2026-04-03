@@ -346,7 +346,7 @@ BEGIN
   END IF;
 
   -- ── AE / EE / ASSISTANT COMMISSIONER allowlist: status tracking ──
-  IF v_caller_role IN ('ae', 'ee', 'assistant_commissioner') THEN
+  IF v_caller_role IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
     v_old_rest.status := NULL; v_new_rest.status := NULL;
     IF v_old_rest IS DISTINCT FROM v_new_rest THEN
       RAISE EXCEPTION 'Zone officers can only update ticket status';
@@ -403,7 +403,7 @@ BEGIN
           RAISE EXCEPTION 'Ticket must have verified dimensions and rate to move to verified';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an open ticket';
         END IF;
 
@@ -415,7 +415,7 @@ BEGIN
           RAISE EXCEPTION 'Ticket must have exactly one executor (contractor OR mukadam) to be marked assigned';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate a verified ticket';
         END IF;
 
@@ -424,7 +424,7 @@ BEGIN
           RAISE EXCEPTION 'From assigned, ticket can only move to in_progress or escalated';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an assigned ticket';
         END IF;
 
@@ -436,7 +436,7 @@ BEGIN
           RAISE EXCEPTION 'Cannot submit for audit without an after-photo';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an in-progress ticket';
         END IF;
 
@@ -448,7 +448,7 @@ BEGIN
           RAISE EXCEPTION 'Ticket cannot be resolved without passing SSIM verification or citizen confirmation';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an audit-pending ticket';
         END IF;
 
@@ -462,7 +462,7 @@ BEGIN
         RAISE EXCEPTION 'Ticket is cross-assigned and cannot change state';
         
       WHEN 'escalated' THEN
-        IF v_caller_role NOT IN ('ae', 'ee', 'assistant_commissioner') THEN
+        IF v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
           RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can move an escalated ticket back into workflow';
         END IF;
         IF NEW.status NOT IN ('verified', 'assigned', 'in_progress', 'audit_pending', 'resolved') THEN

@@ -28,6 +28,7 @@ CREATE TYPE user_role AS ENUM (
   'je',                    -- Junior Engineer — primary mobile app user (30-40)
   'mukadam',               -- Site Supervisor — departmental repair lead
   'ae',                    -- Assistant Engineer — estimate verifier (8)
+  'de',                    -- Deputy Engineer — zonal technical head (8)
   'ee',                    -- Executive Engineer — multi-zone technical sanction
   'assistant_commissioner', -- Zone Officer — budget holder (8)
   'city_engineer',         -- HQ Admin — rate card + contractor management (1)

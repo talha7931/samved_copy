@@ -248,7 +248,7 @@ COMMENT ON TABLE escalation_rules IS '7 auto-escalation rules from DMA framework
 
 INSERT INTO escalation_rules (rule_number, rule_name, description, trigger_hours, from_status, escalate_to_role, notification_template, auto_reopen) VALUES
   (1, 'No Acknowledgement',    'Complaint not acknowledged within 4 hours',          4,   'open',           'ae',                    'ALERT: Ticket {ref} not acknowledged in 4h. Immediate JE action required.', false),
-  (2, 'No Site Inspection',    'No site inspection logged within 48 hours',          48,  'open',           'ae',                    'ESCALATION: Ticket {ref} — no inspection in 48h. Escalated to Assistant Engineer.', false),
+  (2, 'No Site Inspection',    'No site inspection logged within 48 hours',          48,  'open',           'de',                    'ESCALATION: Ticket {ref} — no inspection in 48h. Escalated to Deputy Engineer.', false),
   (3, 'No Work Order',         'No work order generated within 5 working days',      120, 'verified',       'ee',         'ESCALATION: Ticket {ref} — no work order in 5 days. Escalated to Executive Engineer.', false),
   (4, 'No Resolution 10d',    'No resolution within 10 working days',               240, 'assigned',       'assistant_commissioner', 'CRITICAL: Ticket {ref} — unresolved for 10 days. Dy. Commissioner notified.', false),
   (5, 'No Resolution 21d',    'No resolution within 21 working days (Aaple Sarkar)', 504, 'in_progress',    'commissioner',          'URGENT: Ticket {ref} — 21-day breach. Commissioner meeting agenda flag.', false),

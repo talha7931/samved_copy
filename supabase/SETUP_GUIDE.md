@@ -36,6 +36,7 @@ In Supabase Dashboard → Authentication → Users, create these accounts:
 | je.zone1@ssr.demo | Demo@SSR2025 | je (Zone 1) |
 | je.zone4@ssr.demo | Demo@SSR2025 | je (Zone 4) |
 | ae.zone4@ssr.demo | Demo@SSR2025 | ae (Zone 4) |
+| de.zone4@ssr.demo | Demo@SSR2025 | de (Zone 4) |
 | ee@ssr.demo | Demo@SSR2025 | ee |
 | contractor.z4@ssr.demo | Demo@SSR2025 | contractor (Zone 4) |
 | mukadam.z4@ssr.demo | Demo@SSR2025 | mukadam (Zone 4) |
