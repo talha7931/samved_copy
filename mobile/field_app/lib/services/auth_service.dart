@@ -1,0 +1,45 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/profile.dart';
+import '../models/zone.dart';
+
+class AuthService {
+  AuthService(this._client);
+
+  final SupabaseClient _client;
+
+  Session? get currentSession => _client.auth.currentSession;
+
+  Stream<AuthState> get onAuthStateChange => _client.auth.onAuthStateChange;
+
+  Future<void> signInWithOtp({required String phoneE164}) async {
+    await _client.auth.signInWithOtp(phone: phoneE164);
+  }
+
+  Future<AuthResponse> verifyOtp({
+    required String phoneE164,
+    required String token,
+  }) {
+    return _client.auth.verifyOTP(
+      phone: phoneE164,
+      token: token,
+      type: OtpType.sms,
+    );
+  }
+
+  Future<void> signOut() => _client.auth.signOut();
+
+  Future<Profile?> fetchProfile() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return null;
+    final row = await _client.from('profiles').select().eq('id', uid).maybeSingle();
+    if (row == null) return null;
+    return Profile.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<Zone?> fetchZone(int zoneId) async {
+    final row = await _client.from('zones').select().eq('id', zoneId).maybeSingle();
+    if (row == null) return null;
+    return Zone.fromJson(Map<String, dynamic>.from(row));
+  }
+}

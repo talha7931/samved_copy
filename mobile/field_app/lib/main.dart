@@ -1,24 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Placeholder entrypoint. Configure Supabase URL + anon key via --dart-define or env,
-/// then implement Citizen / JE / Contractor flows per implementation plan.
-void main() {
-  runApp(const RoadNirmanFieldApp());
-}
+import 'app/app.dart';
+import 'core/config/app_env.dart';
 
-class RoadNirmanFieldApp extends StatelessWidget {
-  const RoadNirmanFieldApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Road Nirman Field',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Road Nirman Field')),
-        body: const Center(
-          child: Text('Flutter field track — connect Supabase and implement flows.'),
+  if (!AppEnv.isConfigured) {
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SelectableText(
+                AppEnv.configError,
+                style: const TextStyle(fontSize: 15, height: 1.4),
+              ),
+            ),
+          ),
         ),
       ),
     );
+    return;
   }
+
+  await Supabase.initialize(
+    url: AppEnv.supabaseUrl,
+    anonKey: AppEnv.supabaseAnonKey,
+  );
+
+  runApp(
+    const ProviderScope(
+      child: RoadNirmanApp(),
+    ),
+  );
 }
