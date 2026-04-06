@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/gradient_primary_button.dart';
+import '../../core/widgets/sticky_bottom_cta.dart';
+import '../../core/widgets/ticket_summary_card.dart';
 import '../../models/rate_card.dart';
 import '../../models/ticket_dimensions.dart';
 import '../../providers/providers.dart';
@@ -21,11 +22,20 @@ class JeMeasureScreen extends ConsumerStatefulWidget {
 class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
   final _len = TextEditingController();
   final _wid = TextEditingController();
+  final _dep = TextEditingController();
   RateCard? _card;
   List<RateCard> _cards = [];
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  String? _damageCause;
+
+  static const Map<String, String> _causeMap = {
+    'Roads': 'poor_construction',
+    'Water Supply': 'utility_water',
+    'Drainage': 'utility_drainage',
+    'MSEDCL': 'utility_electricity',
+  };
 
   @override
   void initState() {
@@ -50,6 +60,7 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
   void dispose() {
     _len.dispose();
     _wid.dispose();
+    _dep.dispose();
     super.dispose();
   }
 
@@ -68,12 +79,13 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
 
   Future<void> _save() async {
     final c = _card;
-    if (c == null) {
-      setState(() => _error = 'Select a work type / rate card.');
+    if (c == null || _damageCause == null) {
+      setState(() => _error = 'Select work type and damage cause.');
       return;
     }
     final l = double.tryParse(_len.text);
     final w = double.tryParse(_wid.text);
+    final d = double.tryParse(_dep.text) ?? 0;
     if (l == null || w == null || l <= 0 || w <= 0) {
       setState(() => _error = 'Enter valid length and width (metres).');
       return;
@@ -90,18 +102,37 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
             dimensions: TicketDimensions(
               lengthM: l,
               widthM: w,
-              depthM: 0,
+              depthM: d,
               areaSqm: area,
             ),
             workType: c.workType,
+            damageCause: _damageCause!,
             rateCardId: c.id,
             ratePerUnit: c.ratePerUnit,
             estimatedCost: cost,
           );
+      await ref.read(ticketEventServiceProvider).insertEvent(
+            ticketId: widget.ticketId,
+            actorRole: 'je',
+            eventType: 'measurement_recorded',
+            oldStatus: 'open',
+            newStatus: 'verified',
+            notes: 'JE recorded dimensions and estimate',
+            metadata: {
+              'length_m': l,
+              'width_m': w,
+              'depth_m': d / 100,
+              'area_sqm': area,
+              'work_type': c.workType,
+              'rate_card_id': c.id,
+              'estimated_cost': cost,
+              'damage_cause': _damageCause,
+            },
+          );
       if (!mounted) return;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
       ref.invalidate(jeInboxProvider);
-      context.pop();
+      context.go('/je/tickets/${widget.ticketId}/assign');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Estimate saved')),
       );
@@ -116,6 +147,7 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final ticketAsync = ref.watch(ticketDetailProvider(widget.ticketId));
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -125,8 +157,18 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Measure & estimate')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
+          ticketAsync.when(
+            data: (ticket) => ticket == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: TicketSummaryCard(ticket: ticket),
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -154,6 +196,24 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                Row(
+                  children: [
+                    Text(
+                      'Pothole dimensions',
+                      style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text('#${widget.ticketId.substring(0, 4)}'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<RateCard>(
                   decoration: const InputDecoration(labelText: 'Work type (rate card)'),
                   items: _cards
@@ -187,6 +247,15 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
                   ],
                   onChanged: (_) => setState(() {}),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _dep,
+                  decoration: const InputDecoration(labelText: 'Depth (cm)'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  ],
+                ),
               ],
             ),
           ),
@@ -209,21 +278,70 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
                     'Estimated cost: ₹${_cost!.toStringAsFixed(2)}',
                     style: tt.titleMedium?.copyWith(color: cs.primary),
                   ),
+                if (_card != null)
+                  Text(
+                    '${_area.toStringAsFixed(2)} sqm × ₹${_card!.ratePerUnit.toStringAsFixed(2)} = ₹${_cost?.toStringAsFixed(2) ?? '-'}',
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: _causeMap.entries
+                .map(
+                  (e) => _CauseChip(
+                    label: e.key,
+                    selected: _damageCause == e.value,
+                    onTap: () => setState(() => _damageCause = e.value),
+                  ),
+                )
+                .toList(),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: cs.error)),
           ],
-          const SizedBox(height: 24),
-          GradientPrimaryButton(
-            onPressed: _saving ? null : _save,
-            label: 'Save estimate',
-            icon: Icons.save_outlined,
-            loading: _saving,
-          ),
         ],
+      ),
+      bottomNavigationBar: StickyBottomCta(
+        primaryLabel: 'Approve & Assign Contractor',
+        onPrimaryTap: _saving ? null : _save,
+      ),
+    );
+  }
+}
+
+class _CauseChip extends StatelessWidget {
+  const _CauseChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : cs.surface,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected ? cs.primary : null,
+              ),
+        ),
       ),
     );
   }

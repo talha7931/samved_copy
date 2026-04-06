@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/location_service.dart';
 import '../services/rate_card_service.dart';
 import '../services/storage_service.dart';
+import '../services/ticket_event_service.dart';
 import '../services/ticket_service.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>(
@@ -18,6 +19,10 @@ final authServiceProvider = Provider<AuthService>(
 
 final ticketServiceProvider = Provider<TicketService>(
   (ref) => TicketService(ref.watch(supabaseClientProvider)),
+);
+
+final ticketEventServiceProvider = Provider<TicketEventService>(
+  (ref) => TicketEventService(ref.watch(supabaseClientProvider)),
 );
 
 final storageServiceProvider = Provider<StorageService>(

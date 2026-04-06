@@ -21,24 +21,48 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   final _otpFocus = FocusNode();
   bool _loading = false;
   String? _error;
+  int _resendLeft = 30;
+  bool _verifying = false;
 
   @override
   void initState() {
     super.initState();
     _otpFocus.addListener(() => setState(() {}));
+    _startResendTimer();
+    _code.addListener(_onCodeChanged);
   }
 
   @override
   void dispose() {
+    _code.removeListener(_onCodeChanged);
     _code.dispose();
     _otpFocus.dispose();
     super.dispose();
   }
 
+  void _onCodeChanged() {
+    if (_code.text.trim().length == 6 && !_loading && !_verifying) {
+      _verify();
+    }
+  }
+
+  void _startResendTimer() {
+    Future.doWhile(() async {
+      if (!mounted) return false;
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      if (_resendLeft <= 0) return false;
+      setState(() => _resendLeft -= 1);
+      return _resendLeft > 0;
+    });
+  }
+
   Future<void> _verify() async {
+    if (_verifying) return;
     setState(() {
       _error = null;
       _loading = true;
+      _verifying = true;
     });
     final token = _code.text.trim();
     if (token.length < 6) {
@@ -58,7 +82,32 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _verifying = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (_resendLeft > 0 || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authServiceProvider).signInWithOtp(phoneE164: widget.phoneE164);
+      if (!mounted) return;
+      setState(() => _resendLeft = 30);
+      _startResendTimer();
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -215,6 +264,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                 label: 'Verify & continue',
                                 icon: Icons.check_rounded,
                                 loading: _loading,
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: (_resendLeft == 0 && !_loading) ? _resendOtp : null,
+                                child: Text(
+                                  _resendLeft == 0
+                                      ? 'Resend OTP'
+                                      : 'Resend OTP in ${_resendLeft}s',
+                                ),
                               ),
                             ],
                           ),

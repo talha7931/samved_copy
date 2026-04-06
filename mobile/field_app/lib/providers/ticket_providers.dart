@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/ticket.dart';
+import '../services/ticket_service.dart';
 import 'providers.dart';
 
 /// Citizen's own tickets (home + map).
@@ -14,11 +15,23 @@ final ticketDetailProvider =
   return ref.watch(ticketServiceProvider).fetchTicket(id);
 });
 
+final ticketLookupProvider =
+    FutureProvider.family.autoDispose<TicketLookup, Ticket>((ref, ticket) {
+  return ref.watch(ticketServiceProvider).fetchLookupForTicket(ticket);
+});
+
 final jeInboxProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   final profile = await ref.watch(profileProvider.future);
   final z = profile?.zoneId;
   if (z == null) return [];
   return ref.watch(ticketServiceProvider).fetchJeZoneTickets(z);
+});
+
+final jeZoneAllTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
+  final profile = await ref.watch(profileProvider.future);
+  final z = profile?.zoneId;
+  if (z == null) return [];
+  return ref.watch(ticketServiceProvider).fetchJeZoneTicketsAll(z);
 });
 
 final mukadamInboxProvider = FutureProvider.autoDispose<List<Ticket>>((ref) {

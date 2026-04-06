@@ -6,17 +6,57 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/widgets/citizen_ticket_card.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/profile_app_bar.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
 class CitizenHomeScreen extends ConsumerWidget {
-  const CitizenHomeScreen({super.key});
+  const CitizenHomeScreen({
+    super.key,
+    this.initialTrackOnly = false,
+    this.initialProfileOnly = false,
+  });
+
+  final bool initialTrackOnly;
+  final bool initialProfileOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ticketsAsync = ref.watch(citizenTicketsProvider);
+    final profileAsync = ref.watch(profileProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    if (initialProfileOnly) {
+      return Scaffold(
+        appBar: ProfileAppBar(
+          greeting: 'Citizen account',
+          name: profileAsync.value?.fullName ?? 'User',
+          subtitle: profileAsync.value?.phone ?? '',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await ref.read(authServiceProvider).signOut();
+                if (context.mounted) context.go('/login');
+              },
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _CitizenSummaryCard(openCount: 0, resolvedCount: 0),
+            const SizedBox(height: 14),
+            const EmptyState(
+              title: 'Profile tools',
+              subtitle: 'Language and profile controls are coming soon.',
+              icon: Icons.person_outline_rounded,
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       body: ticketsAsync.when(
@@ -65,7 +105,13 @@ class CitizenHomeScreen extends ConsumerWidget {
                     onTap: () => context.push('/citizen/tickets/${t.id}'),
                     child: Icon(
                       Icons.location_on,
-                      color: cs.primary,
+                      color: switch ((t.severityTier ?? '').toLowerCase()) {
+                        'critical' => const Color(0xFFBA1A1A),
+                        'high' => const Color(0xFFE46500),
+                        'medium' => const Color(0xFF455F87),
+                        'low' => const Color(0xFF22C55E),
+                        _ => cs.primary,
+                      },
                       size: 40,
                     ),
                   ),
@@ -83,23 +129,25 @@ class CitizenHomeScreen extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 _appBarSliver(context, ref),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                    child: _HeroReportCard(
-                      onReport: () => context.push('/citizen/report'),
+                if (!initialTrackOnly)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                      child: _HeroReportCard(
+                        onReport: () => context.push('/citizen/report'),
+                      ),
                     ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _CitizenSummaryCard(
-                      openCount: openCount,
-                      resolvedCount: resolvedCount,
+                if (!initialTrackOnly)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _CitizenSummaryCard(
+                        openCount: openCount,
+                        resolvedCount: resolvedCount,
+                      ),
                     ),
                   ),
-                ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
@@ -114,42 +162,46 @@ class CitizenHomeScreen extends ConsumerWidget {
                             color: cs.primary,
                           ),
                         ),
-                        Text(
-                          '${tickets.length} total',
-                          style: tt.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: cs.primary.withValues(alpha: 0.75),
+                        TextButton(
+                          onPressed: () => context.go('/citizen/track'),
+                          child: Text(
+                            initialTrackOnly ? '${tickets.length} total' : 'View all',
+                            style: tt.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: cs.primary.withValues(alpha: 0.85),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: SizedBox(
-                        height: 200,
-                        child: FlutterMap(
-                          options: MapOptions(
-                            initialCenter: center,
-                            initialZoom: 13,
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'road_nirman_field',
+                if (!initialTrackOnly)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: SizedBox(
+                          height: 200,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: center,
+                              initialZoom: 13,
                             ),
-                            MarkerLayer(markers: markers),
-                          ],
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'road_nirman_field',
+                              ),
+                              MarkerLayer(markers: markers),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   sliver: SliverList.separated(
@@ -174,29 +226,57 @@ class CitizenHomeScreen extends ConsumerWidget {
 
   Widget _appBarSliver(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    return SliverAppBar.large(
+    final profileAsync = ref.watch(profileProvider);
+    final profile = profileAsync.value;
+    return SliverAppBar(
       floating: true,
+      pinned: true,
       backgroundColor: cs.surface,
       surfaceTintColor: Colors.transparent,
-      title: Text(
-        'रोड NIRMAN',
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: cs.primary,
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: cs.primary.withValues(alpha: 0.12),
+            child: Text(
+              (profile?.fullName.isNotEmpty ?? false)
+                  ? profile!.fullName.substring(0, 1).toUpperCase()
+                  : 'C',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'नमस्कार',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                ),
+                Text(
+                  profile?.fullName ?? 'Citizen',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.primary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           onPressed: () {},
           tooltip: 'Notifications',
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () async {
-            await ref.read(authServiceProvider).signOut();
-            if (context.mounted) context.go('/login');
-          },
         ),
       ],
     );

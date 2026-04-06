@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/repair_workflow_stepper.dart';
+import '../../core/widgets/ticket_summary_card.dart';
 import '../../core/widgets/status_badge.dart';
-import '../../core/widgets/gradient_primary_button.dart';
+import '../../core/widgets/sticky_bottom_cta.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
@@ -28,8 +30,10 @@ class MukadamJobScreen extends ConsumerWidget {
           if (ticket == null) return const Center(child: Text('Not found'));
           final area = ticket.dimensions?.areaSqm;
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
+              TicketSummaryCard(ticket: ticket),
+              const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
@@ -53,6 +57,18 @@ class MukadamJobScreen extends ConsumerWidget {
                     ),
                     StatusBadge(status: ticket.status),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: cs.errorContainer.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: const Text(
+                  'Executed by SMC Department Work Gang. No billing applies.',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 16),
@@ -104,31 +120,47 @@ class MukadamJobScreen extends ConsumerWidget {
                   ),
                 ),
               const SizedBox(height: 24),
-              if (ticket.status == 'assigned')
-                GradientPrimaryButton(
-                  onPressed: () async {
-                    await ref.read(ticketServiceProvider).startWork(ticket.id);
-                    ref.invalidate(ticketDetailProvider(ticketId));
-                    ref.invalidate(mukadamInboxProvider);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Work started')),
-                      );
-                    }
+              Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: RepairWorkflowStepper(
+                  currentIndex: switch (ticket.status) {
+                    'assigned' => 0,
+                    'in_progress' => 1,
+                    _ => 2,
                   },
-                  label: 'Start work',
-                  icon: Icons.play_arrow_rounded,
                 ),
-              if (ticket.status == 'in_progress') ...[
-                GradientPrimaryButton(
-                  onPressed: () =>
-                      context.push('/mukadam/jobs/${ticket.id}/proof'),
-                  label: 'Submit completion proof',
-                  icon: Icons.verified_outlined,
-                ),
-              ],
+              ),
             ],
           );
+        },
+      ),
+      bottomNavigationBar: StickyBottomCta(
+        primaryLabel:
+            async.valueOrNull?.status == 'assigned' ? 'Start Work' : 'Upload Completion Proof',
+        onPrimaryTap: () async {
+          final ticket = async.valueOrNull;
+          if (ticket == null) return;
+          if (ticket.status == 'assigned') {
+            final old = ticket.status;
+            await ref.read(ticketServiceProvider).startWork(ticket.id);
+            await ref.read(ticketEventServiceProvider).insertEvent(
+                  ticketId: ticket.id,
+                  actorRole: 'mukadam',
+                  eventType: 'status_change',
+                  oldStatus: old,
+                  newStatus: 'in_progress',
+                  notes: 'Gang deployment started by Mukadam',
+                );
+            ref.invalidate(ticketDetailProvider(ticketId));
+            ref.invalidate(mukadamInboxProvider);
+            if (context.mounted) context.go('/mukadam/inprogress/${ticket.id}');
+            return;
+          }
+          if (context.mounted) context.push('/mukadam/camera/${ticket.id}');
         },
       ),
     );

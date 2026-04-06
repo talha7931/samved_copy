@@ -1,3 +1,4 @@
+import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket.dart';
@@ -15,10 +16,51 @@ class ContractorOption {
   final String companyName;
 }
 
+class TicketLookup {
+  const TicketLookup({
+    this.zoneName,
+    this.prabhagName,
+    this.assignedJeName,
+    this.assignedMukadamName,
+    this.assignedContractorName,
+  });
+
+  final String? zoneName;
+  final String? prabhagName;
+  final String? assignedJeName;
+  final String? assignedMukadamName;
+  final String? assignedContractorName;
+}
+
+class CitizenAiPipelineResult {
+  const CitizenAiPipelineResult({
+    required this.ticket,
+    this.detect,
+    this.severity,
+  });
+
+  final Ticket? ticket;
+  final Map<String, dynamic>? detect;
+  final Map<String, dynamic>? severity;
+}
+
+class RepairVerificationResult {
+  const RepairVerificationResult({
+    required this.ticket,
+    this.verification,
+  });
+
+  final Ticket? ticket;
+  final Map<String, dynamic>? verification;
+}
+
 class TicketService {
   TicketService(this._client);
 
   final SupabaseClient _client;
+  final Map<int, String> _zoneNames = <int, String>{};
+  final Map<int, String> _prabhagNames = <int, String>{};
+  final Map<String, String> _profileNames = <String, String>{};
 
   static const _activeStatuses = [
     'open',
@@ -29,6 +71,20 @@ class TicketService {
     'escalated',
     'cross_assigned',
   ];
+
+  Future<Map<String, dynamic>?> _invokeFunction(
+    String name,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _client.functions.invoke(name, body: body);
+    final data = response.data;
+    if (data == null) return null;
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    throw Exception('Unexpected response from $name');
+  }
 
   Future<List<Ticket>> fetchCitizenTickets() async {
     final uid = _client.auth.currentUser?.id;
@@ -55,6 +111,18 @@ class TicketService {
     return all.where((t) => _activeStatuses.contains(t.status)).toList();
   }
 
+  /// JE dashboard full list (including resolved/rejected) for counts/history.
+  Future<List<Ticket>> fetchJeZoneTicketsAll(int zoneId) async {
+    final rows = await _client
+        .from('tickets')
+        .select()
+        .eq('zone_id', zoneId)
+        .order('updated_at', ascending: false);
+    return (rows as List<dynamic>)
+        .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
   Future<List<Ticket>> fetchMukadamTickets() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return [];
@@ -62,7 +130,7 @@ class TicketService {
         .from('tickets')
         .select()
         .eq('assigned_mukadam', uid)
-        .inFilter('status', ['assigned', 'in_progress'])
+        .inFilter('status', ['assigned', 'in_progress', 'audit_pending', 'resolved'])
         .order('updated_at', ascending: false);
     return (rows as List<dynamic>)
         .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -76,7 +144,7 @@ class TicketService {
         .from('tickets')
         .select()
         .eq('assigned_contractor', uid)
-        .inFilter('status', ['assigned', 'in_progress'])
+        .inFilter('status', ['assigned', 'in_progress', 'audit_pending', 'resolved'])
         .order('updated_at', ascending: false);
     return (rows as List<dynamic>)
         .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -87,6 +155,81 @@ class TicketService {
     final row = await _client.from('tickets').select().eq('id', id).maybeSingle();
     if (row == null) return null;
     return Ticket.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<String?> fetchZoneName(int zoneId) async {
+    if (_zoneNames.containsKey(zoneId)) return _zoneNames[zoneId];
+    final row = await _client
+        .from('zones')
+        .select('name')
+        .eq('id', zoneId)
+        .maybeSingle();
+    final name = row == null ? null : (row['name'] as String?);
+    if (name != null) _zoneNames[zoneId] = name;
+    return name;
+  }
+
+  Future<String?> fetchPrabhagName(int prabhagId) async {
+    if (_prabhagNames.containsKey(prabhagId)) return _prabhagNames[prabhagId];
+    final row = await _client
+        .from('prabhags')
+        .select('name')
+        .eq('id', prabhagId)
+        .maybeSingle();
+    final name = row == null ? null : (row['name'] as String?);
+    if (name != null) _prabhagNames[prabhagId] = name;
+    return name;
+  }
+
+  Future<String?> fetchProfileName(String userId) async {
+    if (_profileNames.containsKey(userId)) return _profileNames[userId];
+    final row = await _client
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+    final name = row == null ? null : (row['full_name'] as String?);
+    if (name != null) _profileNames[userId] = name;
+    return name;
+  }
+
+  Future<TicketLookup> fetchLookupForTicket(Ticket ticket) async {
+    String? zoneName;
+    String? prabhagName;
+    String? assignedJeName;
+    String? assignedMukadamName;
+    String? assignedContractorName;
+    if (ticket.zoneId != null) {
+      zoneName = await fetchZoneName(ticket.zoneId!);
+    }
+    if (ticket.prabhagId != null) {
+      prabhagName = await fetchPrabhagName(ticket.prabhagId!);
+    }
+    if (ticket.assignedJe != null) {
+      assignedJeName = await fetchProfileName(ticket.assignedJe!);
+    }
+    if (ticket.assignedMukadam != null) {
+      assignedMukadamName = await fetchProfileName(ticket.assignedMukadam!);
+    }
+    if (ticket.assignedContractor != null) {
+      assignedContractorName = await fetchProfileName(ticket.assignedContractor!);
+    }
+    return TicketLookup(
+      zoneName: zoneName,
+      prabhagName: prabhagName,
+      assignedJeName: assignedJeName,
+      assignedMukadamName: assignedMukadamName,
+      assignedContractorName: assignedContractorName,
+    );
+  }
+
+  double distanceMeters({
+    required double fromLat,
+    required double fromLng,
+    required double toLat,
+    required double toLng,
+  }) {
+    return Geolocator.distanceBetween(fromLat, fromLng, toLat, toLng);
   }
 
   /// Citizen creates a ticket. `location` must be EWKT — PostgREST casts text
@@ -100,6 +243,11 @@ class TicketService {
     String? addressText,
     String? nearestLandmark,
     String? damageType,
+    double? aiConfidence,
+    double? epdoScore,
+    String? severityTier,
+    int? totalPotholes,
+    String? aiSource,
   }) async {
     final uid = _client.auth.currentUser!.id;
     final locationEwkt =
@@ -116,11 +264,46 @@ class TicketService {
       'address_text': addressText,
       'nearest_landmark': nearestLandmark,
       'damage_type': damageType,
+      'ai_confidence': aiConfidence,
+      'epdo_score': epdoScore,
+      'severity_tier': severityTier,
+      'total_potholes': totalPotholes,
+      if (aiSource != null) 'ai_source': aiSource,
       'department_id': 1,
     };
     final inserted =
         await _client.from('tickets').insert(payload).select('id').single();
     return inserted['id'] as String;
+  }
+
+  Future<CitizenAiPipelineResult> runCitizenAiPipeline(String ticketId) async {
+    Map<String, dynamic>? detect;
+    Map<String, dynamic>? severity;
+
+    detect = await _invokeFunction('detect-road-damage', {
+      'ticket_id': ticketId,
+    });
+    if (detect?['success'] != true) {
+      throw Exception(
+        detect?['error']?.toString() ?? 'Damage detection failed.',
+      );
+    }
+
+    severity = await _invokeFunction('score-severity', {
+      'ticket_id': ticketId,
+    });
+    if (severity?['success'] != true) {
+      throw Exception(
+        severity?['error']?.toString() ?? 'Severity scoring failed.',
+      );
+    }
+
+    final ticket = await fetchTicket(ticketId);
+    return CitizenAiPipelineResult(
+      ticket: ticket,
+      detect: detect == null ? null : Map<String, dynamic>.from(detect),
+      severity: severity == null ? null : Map<String, dynamic>.from(severity),
+    );
   }
 
   Future<void> updateJeCheckIn({
@@ -141,6 +324,7 @@ class TicketService {
     required String ticketId,
     required TicketDimensions dimensions,
     required String workType,
+    required String damageCause,
     required String rateCardId,
     required double ratePerUnit,
     required double estimatedCost,
@@ -148,6 +332,7 @@ class TicketService {
     await _client.from('tickets').update({
       'dimensions': dimensions.toJson(),
       'work_type': workType,
+      'damage_cause': damageCause,
       'rate_card_id': rateCardId,
       'rate_per_unit': ratePerUnit,
       'estimated_cost': estimatedCost,
@@ -190,6 +375,36 @@ class TicketService {
     }).eq('id', ticketId);
   }
 
+  Future<RepairVerificationResult> runRepairVerification(String ticketId) async {
+    final verification = await _invokeFunction('verify-repair', {
+      'ticket_id': ticketId,
+    });
+
+    if (verification?['success'] != true) {
+      throw Exception(
+        verification?['error']?.toString() ?? 'Repair verification failed.',
+      );
+    }
+
+    final ticket = await fetchTicket(ticketId);
+    return RepairVerificationResult(
+      ticket: ticket,
+      verification: verification == null
+          ? null
+          : Map<String, dynamic>.from(verification),
+    );
+  }
+
+  Future<void> rejectTicket({
+    required String ticketId,
+    required String reason,
+  }) async {
+    await _client.from('tickets').update({
+      'status': 'rejected',
+      'department_note': reason,
+    }).eq('id', ticketId);
+  }
+
   Future<List<MukadamOption>> listMukadamsInZone(int zoneId) async {
     final rows = await _client
         .from('profiles')
@@ -209,7 +424,10 @@ class TicketService {
   }
 
   Future<List<ContractorOption>> listContractorsInZone(int zoneId) async {
-    final rows = await _client.from('contractors').select('id, company_name, zone_ids');
+    final rows = await _client
+        .from('contractors')
+        .select('id, company_name, zone_ids, is_blacklisted')
+        .eq('is_blacklisted', false);
     final list = rows as List<dynamic>;
     final out = <ContractorOption>[];
     for (final raw in list) {

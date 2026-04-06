@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/gradient_primary_button.dart';
+import '../../core/widgets/sticky_bottom_cta.dart';
+import '../../core/widgets/ticket_summary_card.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 import '../../services/ticket_service.dart';
@@ -76,10 +77,20 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
             assignedContractor:
                 _kind == _ExecutorKind.contractor ? _contractorId : null,
           );
+      await ref.read(ticketEventServiceProvider).insertEvent(
+            ticketId: widget.ticketId,
+            actorRole: 'je',
+            eventType: 'assignment',
+            oldStatus: ticket.status,
+            newStatus: 'assigned',
+            notes: _kind == _ExecutorKind.gang
+                ? 'Assigned to department gang'
+                : 'Assigned to private contractor',
+          );
       if (!mounted) return;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
       ref.invalidate(jeInboxProvider);
-      context.pop();
+      context.go('/je/tasks');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Executor assigned')),
       );
@@ -103,8 +114,19 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Assign executor')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
+          FutureBuilder(
+            future: ref.read(ticketServiceProvider).fetchTicket(widget.ticketId),
+            builder: (context, snapshot) {
+              final ticket = snapshot.data;
+              if (ticket == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: TicketSummaryCard(ticket: ticket),
+              );
+            },
+          ),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -124,27 +146,38 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          SegmentedButton<_ExecutorKind>(
-            segments: const [
-              ButtonSegment(
-                value: _ExecutorKind.gang,
-                label: Text('Dept work gang'),
-                icon: Icon(Icons.groups_outlined),
+          Row(
+            children: [
+              Expanded(
+                child: _modeCard(
+                  context,
+                  label: 'Department gang',
+                  subtitle: 'Assign to Mukadam',
+                  icon: Icons.groups_outlined,
+                  selected: _kind == _ExecutorKind.gang,
+                  onTap: () => setState(() {
+                    _kind = _ExecutorKind.gang;
+                    _mukadamId = null;
+                    _contractorId = null;
+                  }),
+                ),
               ),
-              ButtonSegment(
-                value: _ExecutorKind.contractor,
-                label: Text('Private contractor'),
-                icon: Icon(Icons.engineering_outlined),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _modeCard(
+                  context,
+                  label: 'Private contractor',
+                  subtitle: 'Empanelled vendor',
+                  icon: Icons.engineering_outlined,
+                  selected: _kind == _ExecutorKind.contractor,
+                  onTap: () => setState(() {
+                    _kind = _ExecutorKind.contractor;
+                    _mukadamId = null;
+                    _contractorId = null;
+                  }),
+                ),
               ),
             ],
-            selected: {_kind},
-            onSelectionChanged: (s) {
-              setState(() {
-                _kind = s.first;
-                _mukadamId = null;
-                _contractorId = null;
-              });
-            },
           ),
           const SizedBox(height: 24),
           if (_kind == _ExecutorKind.gang) ...[
@@ -178,14 +211,93 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: cs.error)),
           ],
-          const SizedBox(height: 24),
-          GradientPrimaryButton(
-            onPressed: (_canSubmit && !_saving) ? _submit : null,
-            label: 'Confirm assignment',
-            icon: Icons.check_circle_outline,
-            loading: _saving,
+          const SizedBox(height: 18),
+          Container(
+            decoration: BoxDecoration(
+              color: cs.primary,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'JOB ORDER PREVIEW',
+                  style: tt.labelMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'JO-${widget.ticketId.substring(0, 8)}',
+                  style: tt.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _kind == _ExecutorKind.gang
+                      ? 'Executor: ${_selectedMukadamName()}'
+                      : 'Executor: ${_selectedContractorName()}',
+                  style: tt.bodyMedium?.copyWith(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: cs.errorContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              'Once assigned, executor cannot be changed without Executive Engineer approval.',
+              style: tt.bodySmall?.copyWith(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
+      ),
+      bottomNavigationBar: StickyBottomCta(
+        primaryLabel: 'Generate Job Order & Assign',
+        onPrimaryTap: (_canSubmit && !_saving) ? _submit : null,
+      ),
+    );
+  }
+
+  Widget _modeCard(
+    BuildContext context, {
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? cs.primaryContainer.withValues(alpha: 0.22) : cs.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Icon(icon, color: selected ? cs.primary : cs.onSurfaceVariant),
+              const SizedBox(height: 8),
+              Text(label, style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -238,5 +350,19 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
         ),
       ),
     );
+  }
+
+  String _selectedMukadamName() {
+    for (final m in _mukadams) {
+      if (m.id == _mukadamId) return m.fullName;
+    }
+    return '-';
+  }
+
+  String _selectedContractorName() {
+    for (final c in _contractors) {
+      if (c.id == _contractorId) return c.companyName;
+    }
+    return '-';
   }
 }

@@ -10,7 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/widgets/gradient_primary_button.dart';
 import '../../providers/providers.dart';
-import '../../providers/ticket_providers.dart';
+import 'ai_result_screen.dart';
 
 class ReportDamageScreen extends ConsumerStatefulWidget {
   const ReportDamageScreen({super.key});
@@ -114,44 +114,19 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
       return;
     }
 
-    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
-    if (uid == null) {
-      setState(() => _loading = false);
-      return;
-    }
-
     try {
-      final url = await ref.read(storageServiceProvider).uploadTicketBeforePhoto(
-            userId: uid,
-            bytes: _photoBytes!,
-            fileExtension: _photoExt,
-          );
-      final profile = await ref.read(authServiceProvider).fetchProfile();
-      final raw = profile?.phone ?? '';
-      final phone = raw.replaceAll(RegExp(r'\D'), '');
-      if (phone.length < 10) {
-        setState(() {
-          _error = 'Your profile has no valid phone number.';
-          _loading = false;
-        });
-        return;
-      }
-      await ref.read(ticketServiceProvider).createCitizenTicket(
-            citizenPhone: phone.length > 10 ? phone.substring(phone.length - 10) : phone,
-            citizenName: null,
-            lat: _lat!,
-            lng: _lng!,
-            photoBeforeUrls: [url],
-            addressText: _address.text.trim().isEmpty ? null : _address.text.trim(),
-            nearestLandmark:
-                _landmark.text.trim().isEmpty ? null : _landmark.text.trim(),
-            damageType: _damageType,
-          );
       if (!mounted) return;
-      ref.invalidate(citizenTicketsProvider);
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report submitted')),
+      context.push(
+        '/citizen/ai-result',
+        extra: AiResultArgs(
+          imageBytes: _photoBytes!,
+          fileExtension: _photoExt,
+          latitude: _lat!,
+          longitude: _lng!,
+          addressText: _address.text.trim().isEmpty ? null : _address.text.trim(),
+          nearestLandmark: _landmark.text.trim().isEmpty ? null : _landmark.text.trim(),
+          damageType: _damageType,
+        ),
       );
     } catch (e) {
       setState(() => _error = e.toString());
@@ -305,7 +280,7 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
           const SizedBox(height: 24),
           GradientPrimaryButton(
             onPressed: _loading ? null : _submit,
-            label: 'Submit report',
+            label: 'Continue to AI review',
             icon: Icons.arrow_forward_rounded,
             loading: _loading,
           ),

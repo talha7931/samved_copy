@@ -18,8 +18,12 @@ class Ticket {
     this.prabhagId,
     this.zoneId,
     this.damageType,
+    this.damageCause,
     required this.departmentId,
     this.departmentNote,
+    this.aiConfidence,
+    this.epdoScore,
+    this.totalPotholes,
     this.severityTier,
     required this.photoBefore,
     this.photoAfter,
@@ -57,8 +61,12 @@ class Ticket {
   final int? prabhagId;
   final int? zoneId;
   final String? damageType;
+  final String? damageCause;
   final int departmentId;
   final String? departmentNote;
+  final double? aiConfidence;
+  final double? epdoScore;
+  final int? totalPotholes;
   final String? severityTier;
   final List<String> photoBefore;
   final String? photoAfter;
@@ -106,8 +114,12 @@ class Ticket {
       prabhagId: json['prabhag_id'] as int?,
       zoneId: json['zone_id'] as int?,
       damageType: json['damage_type'] as String?,
+      damageCause: json['damage_cause'] as String?,
       departmentId: json['department_id'] as int? ?? 1,
       departmentNote: json['department_note'] as String?,
+      aiConfidence: (json['ai_confidence'] as num?)?.toDouble(),
+      epdoScore: (json['epdo_score'] as num?)?.toDouble(),
+      totalPotholes: json['total_potholes'] as int?,
       severityTier: json['severity_tier'] as String?,
       photoBefore: photos,
       photoAfter: json['photo_after'] as String?,

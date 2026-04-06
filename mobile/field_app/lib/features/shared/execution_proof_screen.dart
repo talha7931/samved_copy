@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../core/widgets/gradient_primary_button.dart';
+import '../../core/widgets/sticky_bottom_cta.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
@@ -72,29 +72,60 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
           : 'Take an after photo at the site.');
       return;
     }
+
     final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (uid == null) return;
+
     setState(() {
       _busy = true;
       _error = null;
     });
+
     try {
+      final ticketService = ref.read(ticketServiceProvider);
       final url = await ref.read(storageServiceProvider).uploadAfterPhoto(
             userId: uid,
             bytes: _photoBytes!,
             fileExtension: _photoExt,
           );
-      await ref.read(ticketServiceProvider).submitExecutionProof(
-            ticketId: widget.args.ticketId,
-            afterPhotoUrl: url,
-          );
+
+      await ticketService.submitExecutionProof(
+        ticketId: widget.args.ticketId,
+        afterPhotoUrl: url,
+      );
+
+      Map<String, dynamic>? verification;
+      try {
+        final result = await ticketService.runRepairVerification(
+          widget.args.ticketId,
+        );
+        verification = result.verification;
+      } catch (_) {
+        verification = null;
+      }
+
       if (!mounted) return;
+
       ref.invalidate(ticketDetailProvider(widget.args.ticketId));
       ref.invalidate(mukadamInboxProvider);
       ref.invalidate(contractorInboxProvider);
+
+      final verificationEnvelope = verification;
+      final verificationAi = verificationEnvelope?['ai'];
+      final verificationPassed =
+          verificationAi is Map ? verificationAi['ssim_pass'] == true : null;
+
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proof submitted — quality check pending')),
+        SnackBar(
+          content: Text(
+            verificationPassed == true
+                ? 'Proof submitted - AI verification passed'
+                : verificationPassed == false
+                    ? 'Proof submitted - AI verification recorded'
+                    : 'Proof submitted - quality check pending',
+          ),
+        ),
       );
     } catch (e) {
       setState(() => _error = e.toString());
@@ -107,11 +138,35 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Completion proof')),
+      appBar: AppBar(
+        title: Text(
+          'Upload Completion Proof - ${widget.args.ticketId.substring(0, 8)}',
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
         children: [
+          ref.watch(ticketDetailProvider(widget.args.ticketId)).when(
+                data: (ticket) => ticket?.primaryBeforePhoto == null
+                    ? const SizedBox.shrink()
+                    : Align(
+                        alignment: Alignment.topRight,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.network(
+                            ticket!.primaryBeforePhoto!,
+                            width: 86,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+          const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -152,10 +207,16 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
             padding: const EdgeInsets.all(16),
             child: OutlinedButton.icon(
               onPressed: _capture,
-              icon: Icon(kIsWeb ? Icons.photo_library_outlined : Icons.photo_camera_outlined),
-              label: Text(_photoBytes == null
-                  ? (kIsWeb ? 'Choose after photo' : 'Take after photo')
-                  : (kIsWeb ? 'Change photo' : 'Retake')),
+              icon: Icon(
+                kIsWeb
+                    ? Icons.photo_library_outlined
+                    : Icons.photo_camera_outlined,
+              ),
+              label: Text(
+                _photoBytes == null
+                    ? (kIsWeb ? 'Choose after photo' : 'Take after photo')
+                    : (kIsWeb ? 'Change photo' : 'Retake'),
+              ),
             ),
           ),
           if (_photoBytes != null)
@@ -174,14 +235,17 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: cs.error)),
           ],
-          const SizedBox(height: 24),
-          GradientPrimaryButton(
-            onPressed: _busy ? null : _submit,
-            label: 'Submit for quality check',
-            icon: Icons.verified_rounded,
-            loading: _busy,
+          const SizedBox(height: 12),
+          Text(
+            'Photo will be submitted for JE and AI verification.',
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            textAlign: TextAlign.center,
           ),
         ],
+      ),
+      bottomNavigationBar: StickyBottomCta(
+        primaryLabel: 'Submit for quality check',
+        onPrimaryTap: _busy ? null : _submit,
       ),
     );
   }

@@ -44,9 +44,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _loading = true;
     });
     final d = _digits.text.replaceAll(RegExp(r'\D'), '');
-    if (d.length != 10) {
+    if (d.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(d)) {
       setState(() {
-        _error = 'Enter a valid 10-digit mobile number.';
+        _error = 'Enter a valid 10-digit mobile number starting with 6/7/8/9.';
         _loading = false;
       });
       return;
@@ -218,6 +218,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               icon: Icons.arrow_forward_rounded,
                               loading: _loading,
                             ),
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
+                            onPressed: _loading ? null : () => context.push('/register'),
+                            icon: const Icon(Icons.person_add_alt_1_outlined),
+                            label: const Text('Register as New Citizen'),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: cs.outlineVariant)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'OR',
+                                  style: tt.labelMedium?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: cs.outlineVariant)),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(

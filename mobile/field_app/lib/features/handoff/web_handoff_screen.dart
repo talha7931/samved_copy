@@ -72,6 +72,12 @@ class WebHandoffScreen extends ConsumerWidget {
                     style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ),
+                const SizedBox(height: 16),
+                CircleAvatar(
+                  radius: 52,
+                  backgroundColor: cs.surface,
+                  child: Icon(Icons.desktop_windows_rounded, size: 54, color: cs.primary),
+                ),
                 const Spacer(),
                 GradientPrimaryButton(
                   onPressed: () async {
@@ -90,6 +96,18 @@ class WebHandoffScreen extends ConsumerWidget {
                     if (context.mounted) context.go('/login');
                   },
                   child: const Text('Sign out'),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Logged in as ${profile.fullName}${profile.zoneId != null ? ' · Zone ${profile.zoneId}' : ''}',
+                  textAlign: TextAlign.center,
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '© Solapur Municipal Corporation',
+                  textAlign: TextAlign.center,
+                  style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
             ),

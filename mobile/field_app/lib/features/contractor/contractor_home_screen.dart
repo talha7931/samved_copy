@@ -3,23 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/profile_app_bar.dart';
+import '../../core/constants/status_labels.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../models/ticket.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
 class ContractorHomeScreen extends ConsumerWidget {
-  const ContractorHomeScreen({super.key});
+  const ContractorHomeScreen({
+    super.key,
+    this.initialBillsOnly = false,
+    this.initialProfileOnly = false,
+  });
+
+  final bool initialBillsOnly;
+  final bool initialProfileOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(contractorInboxProvider);
+    final profileAsync = ref.watch(profileProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Work orders'),
+      appBar: ProfileAppBar(
+        greeting: 'My work orders',
+        name: profileAsync.value?.fullName ?? 'Contractor',
+        subtitle: 'Private contractor',
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -34,6 +46,20 @@ class ContractorHomeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (tickets) {
+          if (initialBillsOnly) {
+            return const EmptyState(
+              title: 'Bills view',
+              subtitle: 'Billing list will be enabled in the next backend-integrated phase.',
+              icon: Icons.receipt_long_outlined,
+            );
+          }
+          if (initialProfileOnly) {
+            return const EmptyState(
+              title: 'Contractor profile',
+              subtitle: 'Company and profile settings will be available here.',
+              icon: Icons.person_outline_rounded,
+            );
+          }
           if (tickets.isEmpty) {
             return const EmptyState(
               title: 'No contractor assignments',
@@ -72,6 +98,8 @@ class ContractorHomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+                _statChips(tickets, context),
+                const SizedBox(height: 12),
                 ...tickets
                     .map((t) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -82,6 +110,36 @@ class ContractorHomeScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _statChips(List<Ticket> tickets, BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final open = tickets.where((t) => t.status == 'assigned').length;
+    final progress = tickets.where((t) => t.status == 'in_progress').length;
+    final done = tickets.where((t) => t.status == 'resolved').length;
+    Widget chip(String label, int count, Color color) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '$label: $count',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        );
+
+    return Wrap(
+      spacing: 8,
+      children: [
+        chip('Open', open, cs.primary),
+        chip('In Progress', progress, cs.tertiary),
+        chip('Done', done, const Color(0xFF16A34A)),
+      ],
     );
   }
 }
@@ -135,6 +193,11 @@ class _Tile extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+              const SizedBox(height: 6),
+              Text(
+                ticketStatusLabelForRole(ticket.status, 'contractor'),
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
