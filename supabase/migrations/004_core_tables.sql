@@ -126,6 +126,7 @@ CREATE TABLE tickets (
   status              ticket_status DEFAULT 'open',
   assigned_je         UUID REFERENCES auth.users(id),
   assigned_contractor UUID REFERENCES auth.users(id),
+  assigned_mukadam    UUID REFERENCES auth.users(id),
   approval_tier       approval_tier,                 -- Computed from estimated_cost
 
   -- ── JE VERIFICATION DATA (O36, O37) ─────────────────────────

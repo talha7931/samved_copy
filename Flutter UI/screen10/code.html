@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NIRMAN Commissioner Portal | Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#1a1c1e",
+              "on-primary": "#ffffff",
+              "on-secondary-container": "#5a6374",
+              "secondary": "#555f70",
+              "surface-container": "#eeedf1",
+              "secondary-fixed-dim": "#bdc7da",
+              "on-tertiary": "#ffffff",
+              "surface-variant": "#e3e2e6",
+              "on-primary-container": "#8aa4cf",
+              "primary-fixed-dim": "#adc8f5",
+              "on-background": "#1a1c1e",
+              "primary-fixed": "#d5e3ff",
+              "surface-container-lowest": "#ffffff",
+              "outline-variant": "#c4c6cf",
+              "tertiary-container": "#632800",
+              "primary-container": "#1e3a5f",
+              "surface-container-highest": "#e3e2e6",
+              "tertiary": "#411800",
+              "surface-dim": "#dad9dd",
+              "surface": "#faf9fc",
+              "surface-tint": "#455f87",
+              "secondary-fixed": "#d9e3f7",
+              "inverse-primary": "#adc8f5",
+              "surface-container-high": "#e9e7eb",
+              "on-primary-fixed-variant": "#2d486d",
+              "on-secondary-fixed-variant": "#3e4757",
+              "inverse-on-surface": "#f1f0f4",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed-variant": "#783200",
+              "inverse-surface": "#2f3033",
+              "background": "#faf9fc",
+              "secondary-container": "#d6e0f4",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#121c2a",
+              "on-secondary": "#ffffff",
+              "on-error-container": "#93000a",
+              "surface-container-low": "#f4f3f7",
+              "primary": "#022448",
+              "outline": "#74777f",
+              "error": "#ba1a1a",
+              "on-tertiary-container": "#ff8031",
+              "tertiary-fixed-dim": "#ffb690",
+              "on-surface-variant": "#43474e",
+              "on-tertiary-fixed": "#341100",
+              "on-primary-fixed": "#001c3b",
+              "tertiary-fixed": "#ffdbca",
+              "surface-bright": "#faf9fc"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #0F172A; color: #f8fafc; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); }
+        .map-gradient { background: radial-gradient(circle at center, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.8) 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="font-body selection:bg-orange-500/30 overflow-hidden">
+<!-- SideNavBar (Authority Source: JSON) -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-950 flex flex-col p-4 space-y-2 z-50 tonal-shift">
+<div class="flex items-center gap-3 px-2 py-6 mb-4">
+<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">location_city</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-blue-50 leading-tight">रोड NIRMAN</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Solapur Municipal Corporation</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Overview - ACTIVE -->
+<a class="flex items-center gap-3 px-4 py-3 text-blue-900 dark:text-white bg-blue-50 dark:bg-blue-900/30 rounded-full border-r-4 border-orange-500 font-medium transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span>Overview</span>
+</a>
+<!-- Inactive tabs -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">map</span>
+<span>Map</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">report_problem</span>
+<span>Complaints</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">engineering</span>
+<span>Contractors</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span>Budget</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1 pt-4 border-t border-slate-800">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Municipal HQ</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopAppBar (Authority Source: JSON) -->
+<header class="w-full sticky top-0 z-40 bg-slate-900/70 backdrop-blur-xl flex justify-between items-center px-8 py-4">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-black text-white font-headline tracking-tight">रोड NIRMAN — Command Center</h2>
+<div class="px-3 py-1 bg-slate-800 rounded-full flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+<span class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Live SOLAPUR Network</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-slate-800 border-none rounded-full pl-10 pr-4 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 w-64" placeholder="Search projects or zones..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-800 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold text-white leading-none">Commissioner</p>
+<p class="text-[10px] text-slate-500">Solapur Municipal Corporation</p>
+</div>
+<img alt="Municipal Commissioner Profile" class="w-10 h-10 rounded-full border-2 border-slate-700" data-alt="professional portrait of a distinguished government official in a suit minimalist background soft studio lighting sharp focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVGAOlDn8YAiz_i3LmqC1570YIljvHmBWvxdQBoorL_kPdj_YkBkGB_0gdxNFYvwMYOTyk_nOyuqKvLjrZPSBxYZHghe0DFnMJ0ROeqFcRVHYTIkAgvb9aJ3GRUTLMnnk3Ohk_wFT6IZJByLqCdgNfQnn5t5W7XbYTQe2qKRoZFwRaczmM3qncSl6m1vEO9Akt8aGV2f0JwRw_aDtG2yJcKdPhYlYZ-DDkcN7rSKgr34m9V3dim_vr3WT9N8z7PRv16-3xDd-jxvE"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-8 space-y-6 flex-1 overflow-y-auto no-scrollbar pb-32">
+<!-- KPI Cards Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="glass-card p-6 rounded-lg border-l-4 border-blue-500 flex flex-col justify-between h-32">
+<span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Open Cases</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-headline font-extrabold text-blue-400">127</span>
+<span class="text-xs text-emerald-400 flex items-center font-bold">
+<span class="material-symbols-outlined text-xs">trending_down</span> 4%
+                        </span>
+</div>
+</div>
+<div class="glass-card p-6 rounded-lg border-l-4 border-error flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-error/10 rounded-bl-full flex items-center justify-center">
+<span class="material-symbols-outlined text-error animate-pulse">warning</span>
+</div>
+<span class="text-slate-400 text-xs font-bold uppercase tracking-wider">CRITICAL ACTIONS</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-headline font-extrabold text-error">8</span>
+<span class="text-[10px] bg-error/20 text-error px-2 py-0.5 rounded-full font-bold">IMMEDIATE</span>
+</div>
+</div>
+<div class="glass-card p-6 rounded-lg border-l-4 border-emerald-500 flex flex-col justify-between h-32">
+<span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Resolved Today</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-headline font-extrabold text-emerald-400">23</span>
+<span class="text-xs text-slate-500 font-medium">Goal: 30</span>
+</div>
+</div>
+<div class="glass-card p-6 rounded-lg border-l-4 border-orange-500 flex flex-col justify-between h-32">
+<span class="text-slate-400 text-xs font-bold uppercase tracking-wider">SLA Breached</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-headline font-extrabold text-orange-400">4</span>
+<span class="text-xs text-orange-400/50 font-bold uppercase">Attention Req</span>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Map Area (60%) -->
+<div class="col-span-12 lg:col-span-7 h-[600px] glass-card rounded-lg relative overflow-hidden">
+<!-- Map Mock -->
+<div class="absolute inset-0 z-0 grayscale contrast-125 opacity-40">
+<img class="w-full h-full object-cover" data-alt="dark mode urban satellite map of solapur city with neon grid lines digital smart city interface top down view" data-location="Solapur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjTjv0yrLW3p5KWhj8dCfU4EmlsSEbDXkBraVUQeCwKojdL0nI8GP0ceZJKpAQRf-lHgXNIFmtKVT825ZAnp11CADFbs4XiKxYHn8B9ECpYFoxGhsfbtRPtbrpHh37jP43Eaw3CeexSuDV0fvy0aldKk1mFUH5uMXMTwmNzdda5CQhyPWduPFM1wN2wMWUGJ48kN80eTN-voApdcVPtzv0-X6GKJFmXf8D-a6Nb7wjlvsako74Ycf0uRdEyph_xFy0Ne0eJTYZ5kU"/>
+</div>
+<div class="absolute inset-0 map-gradient z-10"></div><div class="absolute inset-0 z-[15] pointer-events-none opacity-40">
+<!-- Zone 01 Outline -->
+<div class="absolute top-[15%] left-[10%] w-[35%] h-[45%] border border-dashed border-slate-500/30 rounded-[4rem] flex items-center justify-center">
+<span class="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase">Zone 01</span>
+</div>
+<!-- Zone 02 Outline -->
+<div class="absolute top-[55%] left-[25%] w-[40%] h-[35%] border border-dashed border-slate-500/30 rounded-[3rem] flex items-center justify-center">
+<span class="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase">Zone 02</span>
+</div>
+<!-- Zone 03 Outline -->
+<div class="absolute top-[10%] left-[55%] w-[35%] h-[50%] border border-dashed border-slate-500/30 rounded-[5rem] flex items-center justify-center">
+<span class="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase">Zone 03</span>
+</div>
+</div>
+<!-- Live Ticker Overlay -->
+<div class="absolute top-6 left-6 right-6 z-20 flex items-center justify-center">
+<div class="bg-slate-950/80 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-full flex items-center gap-4 text-xs">
+<div class="flex items-center gap-2 text-error font-bold">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+</span>
+                                🔴 New CRITICAL pothole
+                            </div>
+<div class="h-3 w-[1px] bg-slate-700"></div>
+<span class="text-slate-300">Akkalkot Road, Zone 3</span>
+<div class="h-3 w-[1px] bg-slate-700"></div>
+<span class="text-slate-500">2 min ago</span>
+</div>
+</div>
+<!-- Map Pins Mock -->
+<div class="absolute top-[40%] left-[30%] z-20 text-error cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="absolute top-[60%] left-[55%] z-20 text-orange-500 cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="absolute top-[25%] left-[70%] z-20 text-emerald-500 cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<!-- Map Controls -->
+<div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+<button class="w-10 h-10 glass-card rounded-lg flex items-center justify-center hover:bg-slate-800 transition-colors"><span class="material-symbols-outlined">add</span></button>
+<button class="w-10 h-10 glass-card rounded-lg flex items-center justify-center hover:bg-slate-800 transition-colors"><span class="material-symbols-outlined">remove</span></button>
+<button class="w-10 h-10 glass-card rounded-lg flex items-center justify-center text-blue-400"><span class="material-symbols-outlined">my_location</span></button>
+</div>
+<!-- Zone Labels -->
+</div>
+<!-- Right Interaction Area (40%) -->
+<div class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+<!-- Kanban View -->
+<div class="glass-card rounded-lg p-6 flex-1">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-500 text-sm">view_kanban</span>
+                                Current Workstream
+                            </h3>
+<button class="text-[10px] font-bold text-blue-400 hover:underline">VIEW ALL</button>
+</div>
+<div class="grid grid-cols-3 gap-4 h-full min-h-[160px]">
+<div class="space-y-3">
+<div class="flex items-center justify-between px-2">
+<span class="text-[10px] font-bold text-slate-500 uppercase">Pending</span>
+<span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">5</span>
+</div>
+<div class="p-3 bg-slate-800/40 rounded-lg border-l-2 border-slate-600">
+<p class="text-[11px] font-medium text-slate-200">Main Square Hot Mix</p>
+<p class="text-[9px] text-slate-500 mt-1">Ready for deployment</p>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between px-2">
+<span class="text-[10px] font-bold text-blue-400 uppercase">In Progress</span>
+<span class="text-[10px] bg-blue-900/40 px-1.5 py-0.5 rounded text-blue-300">12</span>
+</div>
+<div class="p-3 bg-blue-900/10 rounded-lg border-l-2 border-blue-500">
+<p class="text-[11px] font-medium text-blue-100">Railway Underpass</p>
+<div class="w-full bg-slate-800 h-1 mt-2 rounded-full overflow-hidden">
+<div class="bg-blue-500 h-full w-[65%]"></div>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between px-2">
+<span class="text-[10px] font-bold text-emerald-500 uppercase">Audit</span>
+<span class="text-[10px] bg-emerald-900/40 px-1.5 py-0.5 rounded text-emerald-300">3</span>
+</div>
+<div class="p-3 bg-emerald-900/10 rounded-lg border-l-2 border-emerald-500">
+<p class="text-[11px] font-medium text-emerald-100">Bale Road Patch</p>
+<p class="text-[9px] text-emerald-400 mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">verified</span> Validating</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Vendor Scorecard -->
+<div class="glass-card rounded-lg p-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-500 text-sm">military_tech</span>
+                                Vendor Efficiency
+                            </h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="text-[10px] text-slate-500 font-bold uppercase border-b border-slate-800">
+<tr>
+<th class="pb-3">Contractor</th>
+<th class="pb-3 text-center">Jobs</th>
+<th class="pb-3 text-center">SSIM</th>
+<th class="pb-3 text-center">Re-Open</th>
+<th class="pb-3 text-right">Rank</th>
+</tr>
+</thead>
+<tbody class="text-xs divide-y divide-slate-800/50">
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="py-3 font-semibold text-slate-200">Skyline Infra</td>
+<td class="py-3 text-center text-slate-400">42</td>
+<td class="py-3 text-center text-emerald-400 font-bold">94%</td>
+<td class="py-3 text-center text-slate-500">2%</td>
+<td class="py-3 text-right"><span class="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-black">A+</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="py-3 font-semibold text-slate-200">Prabhat Const.</td>
+<td class="py-3 text-center text-slate-400">28</td>
+<td class="py-3 text-center text-emerald-500/70">88%</td>
+<td class="py-3 text-center text-slate-500">5%</td>
+<td class="py-3 text-right"><span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-black">A</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="py-3 font-semibold text-slate-200">Apex Roadways</td>
+<td class="py-3 text-center text-slate-400">15</td>
+<td class="py-3 text-center text-orange-500">72%</td>
+<td class="py-3 text-center text-error font-bold">12%</td>
+<td class="py-3 text-right"><span class="bg-error/20 text-error px-2 py-0.5 rounded-full font-black">C</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Bar -->
+<footer class="fixed bottom-0 right-0 left-64 bg-slate-950/90 backdrop-blur-2xl px-8 py-6 z-30 border-t border-slate-800">
+<div class="flex items-end gap-12">
+<div class="flex-1">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Quarterly Budget Utilization</span>
+<span class="text-xs font-bold text-white">₹14.2L <span class="text-slate-500 font-normal">/ ₹50L</span></span>
+</div>
+<div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-gradient-to-r from-blue-600 to-blue-400 w-[28.4%]"></div>
+<div class="h-full bg-blue-900/30 w-[10%]"></div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col gap-1">
+<span class="text-[9px] text-slate-500 font-bold uppercase">Zone 01</span>
+<div class="w-16 h-1 bg-slate-800 rounded-full"><div class="h-full bg-emerald-500 w-[70%]"></div></div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[9px] text-slate-500 font-bold uppercase">Zone 02</span>
+<div class="w-16 h-1 bg-slate-800 rounded-full"><div class="h-full bg-orange-500 w-[45%]"></div></div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[9px] text-slate-500 font-bold uppercase">Zone 03</span>
+<div class="w-16 h-1 bg-slate-800 rounded-full"><div class="h-full bg-blue-500 w-[90%]"></div></div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="bg-slate-800 p-2 rounded-lg hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-white">download</span>
+</button>
+<button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm">print</span>
+                        Export Reports
+                    </button>
+</div>
+</div>
+</footer>
+</main>
+<!-- FAB -->
+<div class="fixed bottom-24 right-8 z-50">
+<button class="w-14 h-14 rounded-full bg-orange-500 shadow-xl shadow-orange-500/20 text-white flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl">add_alert</span>
+</button>
+</div>
+</body></html>

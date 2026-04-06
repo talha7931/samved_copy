@@ -1,0 +1,12 @@
+{
+  "name": "road-nirman-supabase",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local Supabase CLI workspace for Road Nirman",
+  "scripts": {
+    "supabase": "supabase"
+  },
+  "devDependencies": {
+    "supabase": "^2.84.10"
+  }
+}

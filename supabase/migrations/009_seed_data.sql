@@ -129,13 +129,17 @@ Demo Credentials (create in Supabase Auth Dashboard):
   je.zone6@ssr.demo       / Demo@SSR2025   → role: je, zone 6
   je.zone7@ssr.demo       / Demo@SSR2025   → role: je, zone 7
   je.zone8@ssr.demo       / Demo@SSR2025   → role: je, zone 8
+  ae.zone4@ssr.demo       / Demo@SSR2025   → role: ae, zone 4
   de.zone4@ssr.demo       / Demo@SSR2025   → role: de, zone 4
-  contractor.z4@ssr.demo  / Demo@SSR2025   → role: contractor, zone 4
+  ee@ssr.demo             / Demo@SSR2025   → role: ee
   zo.zone4@ssr.demo       / Demo@SSR2025   → role: assistant_commissioner, zone 4
   cityengineer@ssr.demo   / Demo@SSR2025   → role: city_engineer
   commissioner@ssr.demo   / Demo@SSR2025   → role: commissioner
+  standing.comm@ssr.demo  / Demo@SSR2025   → role: standing_committee
   accounts@ssr.demo       / Demo@SSR2025   → role: accounts
   superadmin@ssr.demo     / Demo@SSR2025   → role: super_admin
+  contractor.z4@ssr.demo  / Demo@SSR2025   → role: contractor, zone 4
+  mukadam.z4@ssr.demo     / Demo@SSR2025   → role: mukadam, zone 4
 */
 
 -- Helper function to create demo profiles after auth users exist
@@ -145,8 +149,9 @@ DECLARE
   v_citizen_id UUID;
   v_je1_id UUID; v_je2_id UUID; v_je3_id UUID; v_je4_id UUID;
   v_je5_id UUID; v_je6_id UUID; v_je7_id UUID; v_je8_id UUID;
-  v_de4_id UUID; v_contractor_id UUID; v_zo4_id UUID;
-  v_ce_id UUID; v_comm_id UUID; v_acct_id UUID; v_admin_id UUID;
+  v_ae4_id UUID; v_de4_id UUID; v_contractor_id UUID; v_mukadam_id UUID; v_zo4_id UUID;
+  v_ee_id UUID; v_ce_id UUID; v_comm_id UUID; v_sc_id UUID;
+  v_acct_id UUID; v_admin_id UUID;
 BEGIN
   -- Look up auth.users by email to get UUIDs
   SELECT id INTO v_citizen_id FROM auth.users WHERE email = 'citizen@ssr.demo';
@@ -158,11 +163,15 @@ BEGIN
   SELECT id INTO v_je6_id FROM auth.users WHERE email = 'je.zone6@ssr.demo';
   SELECT id INTO v_je7_id FROM auth.users WHERE email = 'je.zone7@ssr.demo';
   SELECT id INTO v_je8_id FROM auth.users WHERE email = 'je.zone8@ssr.demo';
+  SELECT id INTO v_ae4_id FROM auth.users WHERE email = 'ae.zone4@ssr.demo';
   SELECT id INTO v_de4_id FROM auth.users WHERE email = 'de.zone4@ssr.demo';
   SELECT id INTO v_contractor_id FROM auth.users WHERE email = 'contractor.z4@ssr.demo';
+  SELECT id INTO v_mukadam_id FROM auth.users WHERE email = 'mukadam.z4@ssr.demo';
   SELECT id INTO v_zo4_id FROM auth.users WHERE email = 'zo.zone4@ssr.demo';
+  SELECT id INTO v_ee_id FROM auth.users WHERE email = 'ee@ssr.demo';
   SELECT id INTO v_ce_id FROM auth.users WHERE email = 'cityengineer@ssr.demo';
   SELECT id INTO v_comm_id FROM auth.users WHERE email = 'commissioner@ssr.demo';
+  SELECT id INTO v_sc_id FROM auth.users WHERE email = 'standing.comm@ssr.demo';
   SELECT id INTO v_acct_id FROM auth.users WHERE email = 'accounts@ssr.demo';
   SELECT id INTO v_admin_id FROM auth.users WHERE email = 'superadmin@ssr.demo';
 
@@ -205,9 +214,19 @@ BEGIN
       (v_je8_id, 'Ganesh Kale', '9876543218', 'je', 8, 'SMC-JE-801', 'Junior Engineer') ON CONFLICT DO NOTHING;
   END IF;
 
+  IF v_ae4_id IS NOT NULL THEN
+    INSERT INTO profiles (id, full_name, phone, role, zone_id, employee_id, designation) VALUES
+      (v_ae4_id, 'Sanjay Raut', '9876543219', 'ae', 4, 'SMC-AE-401', 'Assistant Engineer') ON CONFLICT DO NOTHING;
+  END IF;
+
   IF v_de4_id IS NOT NULL THEN
     INSERT INTO profiles (id, full_name, phone, role, zone_id, employee_id, designation) VALUES
-      (v_de4_id, 'Sanjay Raut', '9876543219', 'de', 4, 'SMC-DE-401', 'Deputy Engineer') ON CONFLICT DO NOTHING;
+      (v_de4_id, 'Vishram Rane', '9876543235', 'de', 4, 'SMC-DE-401', 'Deputy Engineer') ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_ee_id IS NOT NULL THEN
+    INSERT INTO profiles (id, full_name, phone, role, employee_id, designation) VALUES
+      (v_ee_id, 'Prakash Jadhav', '9876543230', 'ee', 'SMC-EE-001', 'Executive Engineer') ON CONFLICT DO NOTHING;
   END IF;
 
   IF v_contractor_id IS NOT NULL THEN
@@ -215,6 +234,11 @@ BEGIN
       (v_contractor_id, 'S.S. Ekbote', '9876543220', 'contractor', 4) ON CONFLICT DO NOTHING;
     INSERT INTO contractors (id, company_name, company_name_marathi, gst_number, zone_ids, contract_start, contract_end) VALUES
       (v_contractor_id, 'S.S. Ekbote Construction', 'एस.एस. एकबोटे कन्स्ट्रक्शन', '27AABCE1234F1ZP', ARRAY[4,5], '2025-04-01', '2026-03-31') ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_mukadam_id IS NOT NULL THEN
+    INSERT INTO profiles (id, full_name, phone, role, zone_id, employee_id, designation) VALUES
+      (v_mukadam_id, 'Dhondiba Kamble', '9876543232', 'mukadam', 4, 'SMC-MUK-401', 'Mukadam') ON CONFLICT DO NOTHING;
   END IF;
 
   IF v_zo4_id IS NOT NULL THEN
@@ -230,6 +254,11 @@ BEGIN
   IF v_comm_id IS NOT NULL THEN
     INSERT INTO profiles (id, full_name, phone, role, designation) VALUES
       (v_comm_id, 'Dr. Nitin Kadam (IAS)', '9876543223', 'commissioner', 'Municipal Commissioner') ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_sc_id IS NOT NULL THEN
+    INSERT INTO profiles (id, full_name, phone, role, designation) VALUES
+      (v_sc_id, 'Pooja Deshpande', '9876543231', 'standing_committee', 'Standing Committee Member') ON CONFLICT DO NOTHING;
   END IF;
 
   IF v_acct_id IS NOT NULL THEN

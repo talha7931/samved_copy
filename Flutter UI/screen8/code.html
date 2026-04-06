@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contractor Work Orders - Road NIRMAN</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#faf9fc",
+              "outline-variant": "#c4c6cf",
+              "surface-container": "#eeedf1",
+              "on-tertiary-fixed-variant": "#783200",
+              "tertiary": "#411800",
+              "secondary": "#555f70",
+              "on-primary-fixed": "#001c3b",
+              "on-tertiary-container": "#ff8031",
+              "on-secondary-container": "#5a6374",
+              "background": "#faf9fc",
+              "tertiary-container": "#632800",
+              "tertiary-fixed": "#ffdbca",
+              "on-primary-fixed-variant": "#2d486d",
+              "inverse-primary": "#adc8f5",
+              "on-secondary-fixed": "#121c2a",
+              "surface-container-highest": "#e3e2e6",
+              "secondary-container": "#d6e0f4",
+              "on-secondary": "#ffffff",
+              "primary-container": "#1e3a5f",
+              "surface-container-high": "#e9e7eb",
+              "primary-fixed-dim": "#adc8f5",
+              "on-surface-variant": "#43474e",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f4f3f7",
+              "on-tertiary": "#ffffff",
+              "on-error-container": "#93000a",
+              "on-primary-container": "#8aa4cf",
+              "error": "#ba1a1a",
+              "secondary-fixed-dim": "#bdc7da",
+              "on-tertiary-fixed": "#341100",
+              "on-secondary-fixed-variant": "#3e4757",
+              "on-surface": "#1a1c1e",
+              "inverse-on-surface": "#f1f0f4",
+              "outline": "#74777f",
+              "surface-bright": "#faf9fc",
+              "error-container": "#ffdad6",
+              "on-primary": "#ffffff",
+              "inverse-surface": "#2f3033",
+              "secondary-fixed": "#d9e3f7",
+              "surface-tint": "#455f87",
+              "tertiary-fixed-dim": "#ffb690",
+              "primary": "#022448",
+              "surface-dim": "#dad9dd",
+              "on-error": "#ffffff",
+              "primary-fixed": "#d5e3ff",
+              "on-background": "#1a1c1e",
+              "surface-variant": "#e3e2e6"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #faf9fc;
+      }
+      .glass-effect {
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface mb-24">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-3xl flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-primary font-bold shadow-sm">
+                SS
+            </div>
+<div class="flex flex-col">
+<h1 class="font-plus-jakarta-sans headline-md font-bold text-blue-900 leading-tight text-lg">My Work Orders</h1>
+<span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">S.S. Ekbote Const.</span>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors active:scale-95 duration-150 text-blue-900">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<main class="pt-24 px-4 space-y-6">
+<!-- Summary Row: Stat Chips -->
+<section class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide px-2">
+<div class="flex-shrink-0 flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-100/50">
+<div class="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+<span class="text-xs font-bold text-blue-900 font-body">Open: 5</span>
+</div>
+<div class="flex-shrink-0 flex items-center gap-2 bg-[#fff7ed] px-3 py-2 rounded-full border border-orange-100">
+<div class="w-1.5 h-1.5 rounded-full bg-[#f97316]"></div>
+<span class="text-xs font-bold text-[#7c2d12] font-body">In Progress: 2</span>
+</div>
+<div class="flex-shrink-0 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-full border border-slate-200/50">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+<span class="text-xs font-bold text-slate-500 font-body">Done: 8</span>
+</div>
+</section>
+<!-- Work Orders List (Denser Layout) -->
+<div class="space-y-3 px-2">
+<!-- Card 1: IN PROGRESS -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#ff8031]"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="space-y-0.5">
+<code class="text-[9px] font-mono text-slate-500 tracking-tighter">JO-Z4-P12-2025-0089</code>
+<h3 class="font-headline text-md font-bold text-primary leading-tight">Hotgi Road near Afzalpur Naka</h3>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="flex items-center justify-center bg-[#ffdbca] text-[#783200] px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                            IN PROGRESS
+                        </span>
+<span class="text-[9px] font-bold text-error flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                            Due in 1h
+                        </span>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="near_me">near_me</span>
+<span class="text-[11px] font-medium">0.4 km</span>
+</div>
+<div class="bg-[#dcfce7] px-2 py-0.5 rounded-full">
+<span class="text-[11px] font-bold text-[#166534]">₹1,687.50</span>
+</div>
+</div>
+<div class="flex items-center justify-between border-outline-variant/10"><button class="w-full flex items-center justify-center gap-2 bg-[#1E3A5F] text-white font-bold text-sm py-2.5 rounded-lg active:scale-95 transition-transform shadow-sm">
+<span>Upload Proof</span>
+<span class="text-lg">📷</span>
+</button></div>
+</div>
+<!-- Card 2: ASSIGNED -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#ff8031] opacity-50"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="space-y-0.5">
+<code class="text-[9px] font-mono text-slate-500 tracking-tighter">JO-Z1-B04-2025-1102</code>
+<h3 class="font-headline text-md font-bold text-primary leading-tight">Seven Star Railway Overbridge</h3>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="flex items-center justify-center bg-secondary-container text-primary px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                            ASSIGNED
+                        </span>
+<span class="text-[9px] font-bold text-primary/60 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                            Due in 4h
+                        </span>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="near_me">near_me</span>
+<span class="text-[11px] font-medium">1.2 km</span>
+</div>
+<div class="bg-[#dcfce7] px-2 py-0.5 rounded-full">
+<span class="text-[11px] font-bold text-[#166534]">₹4,250.00</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-outline-variant/10">
+<span class="text-[10px] text-on-surface-variant">Assigned 2h ago</span>
+<span class="material-symbols-outlined text-outline text-lg" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Card 3: ASSIGNED (New) -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#ff8031] opacity-30"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="space-y-0.5">
+<code class="text-[9px] font-mono text-slate-500 tracking-tighter">JO-Z2-M09-2025-0456</code>
+<h3 class="font-headline text-md font-bold text-primary leading-tight">Navi Peth Market Lane</h3>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="flex items-center justify-center bg-secondary-container text-primary px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                            ASSIGNED
+                        </span>
+<span class="text-[9px] font-bold text-primary/60 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                            Due in 8h
+                        </span>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="near_me">near_me</span>
+<span class="text-[11px] font-medium">3.8 km</span>
+</div>
+<div class="bg-[#dcfce7] px-2 py-0.5 rounded-full">
+<span class="text-[11px] font-bold text-[#166534]">₹890.00</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-outline-variant/10">
+<span class="text-[10px] text-on-surface-variant">Assigned 5h ago</span>
+<span class="material-symbols-outlined text-outline text-lg" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Card 4: ASSIGNED (New Additional) -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#ff8031] opacity-10"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="space-y-0.5">
+<code class="text-[9px] font-mono text-slate-500 tracking-tighter">JO-Z3-L12-2025-0774</code>
+<h3 class="font-headline text-md font-bold text-primary leading-tight">Civil Hospital Road Section B</h3>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="flex items-center justify-center bg-secondary-container text-primary px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                            ASSIGNED
+                        </span>
+<span class="text-[9px] font-bold text-primary/60 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                            Due in 12h
+                        </span>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="near_me">near_me</span>
+<span class="text-[11px] font-medium">2.1 km</span>
+</div>
+<div class="bg-[#dcfce7] px-2 py-0.5 rounded-full">
+<span class="text-[11px] font-bold text-[#166534]">₹2,100.00</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-outline-variant/10">
+<span class="text-[10px] text-on-surface-variant">Pending Start</span>
+<span class="material-symbols-outlined text-outline text-lg" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-surface/70 backdrop-blur-3xl z-50 rounded-t-[2.5rem] shadow-[0px_-8px_24px_rgba(26,28,30,0.06)]">
+<!-- Work Orders Tab (Active) -->
+<a class="flex flex-col items-center justify-center bg-blue-900 text-white rounded-full px-6 py-2 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="construction" style="font-variation-settings: 'FILL' 1;">construction</span>
+<span class="font-inter text-[10px] font-semibold">Work Orders</span>
+</a>
+<!-- Bills Tab -->
+<a class="flex flex-col items-center justify-center text-slate-500 px-6 py-2 hover:bg-slate-200/40 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-inter text-[10px] font-semibold">Bills</span>
+</a>
+<!-- Profile Tab -->
+<a class="flex flex-col items-center justify-center text-slate-500 px-6 py-2 hover:bg-slate-200/40 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-semibold">Profile</span>
+</a>
+</nav>
+</body></html>

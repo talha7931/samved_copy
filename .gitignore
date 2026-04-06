@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 models/*.pt
 .VSCode/
+.cursor/
+.codex-tmp/
+supabase/node_modules/
+supabase/.temp/
+mobile/field_app/build_apk_log.txt

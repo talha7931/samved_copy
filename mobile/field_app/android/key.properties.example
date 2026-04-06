@@ -1,0 +1,6 @@
+# Copy to key.properties (do not commit key.properties) and fill in values.
+# storeFile path is relative to android/app/
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=road-nirman-upload
+storeFile=../upload-keystore.jks

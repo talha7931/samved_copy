@@ -298,13 +298,13 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- ── CONTRACTOR allowlist: work execution ──
-  IF v_caller_role = 'contractor' THEN
+  -- ── CONTRACTOR & MUKADAM allowlist: work execution ──
+  IF v_caller_role IN ('contractor', 'mukadam') THEN
     v_old_rest.photo_after := NULL; v_new_rest.photo_after := NULL;
     v_old_rest.status := NULL;      v_new_rest.status := NULL; -- Needed to push to audit_pending
     
     IF v_old_rest IS DISTINCT FROM v_new_rest THEN
-      RAISE EXCEPTION 'Contractors can only update photo_after and status (to audit_pending)';
+      RAISE EXCEPTION 'Field executors (Contractor/Mukadam) can only update photo_after and status (to audit_pending)';
     END IF;
     RETURN NEW;
   END IF;
@@ -323,9 +323,10 @@ BEGIN
          OLD.rate_per_unit IS DISTINCT FROM NEW.rate_per_unit OR
          OLD.estimated_cost IS DISTINCT FROM NEW.estimated_cost OR
          OLD.rate_card_id IS DISTINCT FROM NEW.rate_card_id OR
-         OLD.assigned_contractor IS DISTINCT FROM NEW.assigned_contractor
+         OLD.assigned_contractor IS DISTINCT FROM NEW.assigned_contractor OR
+         OLD.assigned_mukadam IS DISTINCT FROM NEW.assigned_mukadam
        ) THEN
-      RAISE EXCEPTION 'Economic details and contractor assignment are locked after the ticket leaves the verification phase';
+      RAISE EXCEPTION 'Economic details and assignments are locked after the ticket leaves the verification phase';
     END IF;
 
     -- If we are in 'open' or 'verified', allow editing them
@@ -334,17 +335,18 @@ BEGIN
     v_old_rest.rate_per_unit := NULL;       v_new_rest.rate_per_unit := NULL;
     v_old_rest.estimated_cost := NULL;      v_new_rest.estimated_cost := NULL;
     v_old_rest.assigned_contractor := NULL; v_new_rest.assigned_contractor := NULL;
+    v_old_rest.assigned_mukadam := NULL;    v_new_rest.assigned_mukadam := NULL;
     v_old_rest.rate_card_id := NULL;        v_new_rest.rate_card_id := NULL;
     -- Note: SSIM, billing, and resolution fields remain untouched
     
     IF v_old_rest IS DISTINCT FROM v_new_rest THEN
-      RAISE EXCEPTION 'JE can only update workflow state, verify dimensions/cost, and assign contractors';
+      RAISE EXCEPTION 'JE can only update workflow state, verify dimensions/cost, and assign contractors/mukadams';
     END IF;
     RETURN NEW;
   END IF;
 
-  -- ── DE / ASSISTANT COMMISSIONER allowlist: status tracking ──
-  IF v_caller_role IN ('de', 'assistant_commissioner') THEN
+  -- ── AE / EE / ASSISTANT COMMISSIONER allowlist: status tracking ──
+  IF v_caller_role IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
     v_old_rest.status := NULL; v_new_rest.status := NULL;
     IF v_old_rest IS DISTINCT FROM v_new_rest THEN
       RAISE EXCEPTION 'Zone officers can only update ticket status';
@@ -401,20 +403,20 @@ BEGIN
           RAISE EXCEPTION 'Ticket must have verified dimensions and rate to move to verified';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can escalate an open ticket';
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an open ticket';
         END IF;
 
       WHEN 'verified' THEN
         IF NEW.status NOT IN ('assigned', 'escalated') THEN
           RAISE EXCEPTION 'From verified, ticket can only move to assigned or escalated';
         END IF;
-        IF NEW.status = 'assigned' AND NEW.assigned_contractor IS NULL THEN
-          RAISE EXCEPTION 'Ticket must have an assigned contractor to be marked assigned';
+        IF NEW.status = 'assigned' AND (NEW.assigned_contractor IS NULL) = (NEW.assigned_mukadam IS NULL) THEN
+          RAISE EXCEPTION 'Ticket must have exactly one executor (contractor OR mukadam) to be marked assigned';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can escalate a verified ticket';
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate a verified ticket';
         END IF;
 
       WHEN 'assigned' THEN
@@ -422,8 +424,8 @@ BEGIN
           RAISE EXCEPTION 'From assigned, ticket can only move to in_progress or escalated';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can escalate an assigned ticket';
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an assigned ticket';
         END IF;
 
       WHEN 'in_progress' THEN
@@ -434,8 +436,8 @@ BEGIN
           RAISE EXCEPTION 'Cannot submit for audit without an after-photo';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can escalate an in-progress ticket';
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an in-progress ticket';
         END IF;
 
       WHEN 'audit_pending' THEN
@@ -446,8 +448,8 @@ BEGIN
           RAISE EXCEPTION 'Ticket cannot be resolved without passing SSIM verification or citizen confirmation';
         END IF;
         IF NEW.status = 'escalated'
-           AND v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can escalate an audit-pending ticket';
+           AND v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can escalate an audit-pending ticket';
         END IF;
 
       WHEN 'resolved' THEN
@@ -460,8 +462,8 @@ BEGIN
         RAISE EXCEPTION 'Ticket is cross-assigned and cannot change state';
         
       WHEN 'escalated' THEN
-        IF v_caller_role NOT IN ('de', 'assistant_commissioner') THEN
-          RAISE EXCEPTION 'Only DE or Assistant Commissioner can move an escalated ticket back into workflow';
+        IF v_caller_role NOT IN ('ae', 'de', 'ee', 'assistant_commissioner') THEN
+          RAISE EXCEPTION 'Only AE, EE, or Assistant Commissioner can move an escalated ticket back into workflow';
         END IF;
         IF NEW.status NOT IN ('verified', 'assigned', 'in_progress', 'audit_pending', 'resolved') THEN
           RAISE EXCEPTION 'From escalated, ticket can only move to verified, assigned, in_progress, audit_pending, or resolved';
@@ -470,12 +472,12 @@ BEGIN
            AND (NEW.dimensions IS NULL OR NEW.rate_per_unit IS NULL) THEN
           RAISE EXCEPTION 'Escalated ticket needs verified dimensions and rate before re-entering workflow';
         END IF;
-        IF NEW.status = 'assigned' AND NEW.assigned_contractor IS NULL THEN
-          RAISE EXCEPTION 'Escalated ticket needs an assigned contractor before moving to assigned';
+        IF NEW.status = 'assigned' AND (NEW.assigned_contractor IS NULL) = (NEW.assigned_mukadam IS NULL) THEN
+          RAISE EXCEPTION 'Escalated ticket needs exactly one executor before moving to assigned';
         END IF;
         IF NEW.status IN ('in_progress', 'audit_pending', 'resolved')
-           AND NEW.assigned_contractor IS NULL THEN
-          RAISE EXCEPTION 'Escalated ticket needs an assigned contractor before resuming execution';
+           AND (NEW.assigned_contractor IS NULL) = (NEW.assigned_mukadam IS NULL) THEN
+          RAISE EXCEPTION 'Escalated ticket needs exactly one executor before resuming execution';
         END IF;
         IF NEW.status IN ('audit_pending', 'resolved') AND NEW.photo_after IS NULL THEN
           RAISE EXCEPTION 'Escalated ticket needs an after-photo before audit or resolution';
