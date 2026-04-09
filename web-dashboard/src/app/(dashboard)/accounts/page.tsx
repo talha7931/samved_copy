@@ -41,24 +41,31 @@ export default async function AccountsDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: pendingBills } = await supabase
-    .from('contractor_bills')
-    .select(BILL_FIELDS)
-    .in('status', ['submitted', 'accounts_review'])
-    .order('submitted_at', { ascending: false });
+  const [pendingRes, allRes, contractorsRes] = await Promise.all([
+    supabase
+      .from('contractor_bills')
+      .select(BILL_FIELDS)
+      .in('status', ['submitted', 'accounts_review'])
+      .order('submitted_at', { ascending: false }),
+    supabase.from('contractor_bills').select(BILL_FIELDS),
+    supabase.from('contractors').select('id, company_name'),
+  ]);
 
-  const { data: allBills } = await supabase
-    .from('contractor_bills')
-    .select(BILL_FIELDS);
+  const pending = (pendingRes.data || []) as unknown as ContractorBill[];
+  const all = (allRes.data || []) as unknown as ContractorBill[];
 
-  const pending = (pendingBills || []) as unknown as ContractorBill[];
-  const all = (allBills || []) as unknown as ContractorBill[];
+  // Build contractor name map for display
+  const contractorNames: Record<string, string> = {};
+  for (const c of contractorsRes.data || []) {
+    contractorNames[c.id] = c.company_name;
+  }
 
   return (
     <AccountsDashboardClient
       initialDashboard={{
         pendingBills: pending,
         kpis: computeKpis(all, pending),
+        contractorNames,
       }}
     />
   );

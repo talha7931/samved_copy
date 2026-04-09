@@ -60,6 +60,19 @@ class AuthService {
     return _client.auth.signInWithPassword(phone: phone, password: password);
   }
 
+  /// Attempt to refresh the current session. If refresh fails (e.g. token
+  /// revoked server-side), sign out so the router redirects to login.
+  /// Returns `true` if refresh succeeded, `false` if signed out.
+  Future<bool> refreshOrSignOut() async {
+    try {
+      final response = await _client.auth.refreshSession();
+      return response.session != null;
+    } catch (_) {
+      await _client.auth.signOut();
+      return false;
+    }
+  }
+
   Future<void> signOut() => _client.auth.signOut();
 
   Future<Profile?> fetchProfile() async {

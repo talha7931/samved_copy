@@ -21,6 +21,15 @@ export default async function StandingCommitteePage() {
     .from('contractor_metrics')
     .select('contractor_id, ssim_pass_rate, reopen_rate, quality_index')
     .order('quality_index', { ascending: false });
+  const { data: contractors } = await supabase
+    .from('contractors')
+    .select('id, company_name');
+
+  // Build contractor name map
+  const contractorNames: Record<string, string> = {};
+  for (const c of contractors || []) {
+    contractorNames[c.id] = c.company_name;
+  }
 
   const totalExpenditure =
     bills?.filter((bill) => bill.status === 'paid').reduce((sum, bill) => sum + (bill.total_amount || 0), 0) || 0;
@@ -112,7 +121,7 @@ export default async function StandingCommitteePage() {
                 }`}>
                   #{index + 1}
                 </span>
-                <p className="truncate text-sm font-bold text-slate-800">{metric.contractor_id.slice(0, 12)}...</p>
+                <p className="truncate text-sm font-bold text-slate-800">{contractorNames[metric.contractor_id] || metric.contractor_id.slice(0, 12)}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="rounded-lg bg-slate-50 py-2">

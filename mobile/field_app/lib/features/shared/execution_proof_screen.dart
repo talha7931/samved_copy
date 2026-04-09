@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/utils/image_source_sheet.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/sticky_bottom_cta.dart';
 import '../../models/ticket.dart';
@@ -49,8 +50,8 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
     return e.isNotEmpty ? e : '.jpg';
   }
 
-  Future<void> _capture() async {
-    if (!kIsWeb) {
+  Future<void> _captureFrom(ImageSource source) async {
+    if (!kIsWeb && source == ImageSource.camera) {
       final cam = await Permission.camera.request();
       if (!cam.isGranted) {
         setState(() => _camDenied = true);
@@ -58,10 +59,7 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
       }
     }
     setState(() => _camDenied = false);
-    final x = await ImagePicker().pickImage(
-      source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
-      imageQuality: 85,
-    );
+    final x = await ImagePicker().pickImage(source: source, imageQuality: 85);
     if (x == null) return;
     final bytes = await x.readAsBytes();
     setState(() {
@@ -70,11 +68,19 @@ class _ExecutionProofScreenState extends ConsumerState<ExecutionProofScreen> {
     });
   }
 
+  Future<void> _capture() async {
+    final source = kIsWeb
+        ? ImageSource.gallery
+        : await pickImageSourceForNative(context);
+    if (source == null) return;
+    await _captureFrom(source);
+  }
+
   Future<void> _submit() async {
     if (_photoBytes == null) {
       setState(() => _error = kIsWeb
           ? 'Choose an after photo (browser uses gallery for testing).'
-          : 'Take an after photo at the site.');
+          : 'Take or choose an after photo at the site.');
       return;
     }
 

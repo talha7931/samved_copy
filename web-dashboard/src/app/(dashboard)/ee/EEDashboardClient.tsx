@@ -18,6 +18,7 @@ import {
   type TechnicalReviewTicket,
   type WarrantyWatchTicket,
 } from '@/lib/dashboard/eeTechnicalReview';
+import { KpiCard } from '@/components/shared/DataDisplay';
 import { formatINR } from '@/lib/utils';
 import type { Ticket, Zone } from '@/lib/types/database';
 
@@ -341,29 +342,3 @@ export function EEDashboardClient({
   );
 }
 
-function KpiCard({
-  label,
-  value,
-  accentColor,
-  icon,
-}: {
-  label: string;
-  value: number | string;
-  accentColor: string;
-  icon: string;
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${accentColor}`} />
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</p>
-          <span className="text-2xl font-headline font-black text-slate-800">{value}</span>
-        </div>
-        <span className="material-symbols-outlined text-slate-300" style={{ fontSize: 24 }}>
-          {icon}
-        </span>
-      </div>
-    </div>
-  );
-}

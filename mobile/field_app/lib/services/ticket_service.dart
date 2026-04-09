@@ -464,7 +464,10 @@ class TicketService {
     int? totalPotholes,
     String? aiSource,
   }) async {
-    final uid = _client.auth.currentUser!.id;
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      throw StateError('Cannot create ticket: user is not signed in.');
+    }
     final locationEwkt =
         'SRID=4326;POINT(${lng.toStringAsFixed(7)} ${lat.toStringAsFixed(7)})';
     final payload = <String, dynamic>{
