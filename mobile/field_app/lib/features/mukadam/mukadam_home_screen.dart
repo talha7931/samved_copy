@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/profile_app_bar.dart';
 import '../../core/constants/status_labels.dart';
+import '../../core/theme/theme.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/profile_app_bar.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../models/ticket.dart';
 import '../../providers/providers.dart';
@@ -22,7 +25,7 @@ class MukadamHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(mukadamInboxProvider);
+    final snapAsync = ref.watch(mukadamHomeProvider);
     final profileAsync = ref.watch(profileProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -44,10 +47,13 @@ class MukadamHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
-        data: (tickets) {
+      body: snapAsync.when(
+        loading: () => const ShimmerList(),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(mukadamHomeProvider),
+        ),
+        data: (snap) {
           if (initialProfileOnly) {
             return const EmptyState(
               title: 'Mukadam profile',
@@ -55,24 +61,41 @@ class MukadamHomeScreen extends ConsumerWidget {
               icon: Icons.person_outline_rounded,
             );
           }
+
+          final tickets = snap.rows
+              .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+
           if (tickets.isEmpty) {
             return const EmptyState(
               title: 'No assignments',
               subtitle: 'JE will assign departmental work to you when ready.',
             );
           }
+
+          final assignedCount = tickets.where((t) => t.status == 'assigned').length;
+          final inProgressCount =
+              tickets.where((t) => t.status == 'in_progress').length;
+          final doneCount = snap.completedThisWeekCount;
+
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(mukadamInboxProvider),
+            onRefresh: () async {
+              ref.invalidate(mukadamHomeProvider);
+              ref.invalidate(mukadamInboxProvider);
+            },
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [cs.primary, cs.primaryContainer],
+                      colors: [
+                        AppDesign.primaryNavy,
+                        AppDesign.primaryContainerNavy,
+                      ],
                     ),
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
@@ -92,21 +115,39 @@ class MukadamHomeScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _chip(context, 'Assigned: $assignedCount', cs.primary),
+                    _chip(context, 'In Progress: $inProgressCount', cs.tertiary),
+                    _chip(
+                      context,
+                      'Done this week: $doneCount',
+                      AppDesign.severityColor(cs, 'low'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 if (initialTasksOnly)
                   const Padding(
                     padding: EdgeInsets.only(bottom: 10),
                     child: EmptyState(
                       title: 'Tasks tab',
-                      subtitle: 'Active tasks from this work-order list are shown below.',
+                      subtitle:
+                          'Active tasks from this work-order list are shown below.',
                       icon: Icons.task_alt_outlined,
                     ),
                   ),
-                ...tickets
-                    .map((t) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _Tile(ticket: t),
-                        )),
+                ...tickets.map((t) {
+                  final jeName =
+                      t.assignedJe == null ? '' : (snap.jeNames[t.assignedJe!] ?? '');
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _Tile(ticket: t, jeName: jeName),
+                  );
+                }),
               ],
             ),
           );
@@ -114,56 +155,96 @@ class MukadamHomeScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _chip(BuildContext context, String label, Color color) {
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: tt.labelLarge?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.ticket});
+  const _Tile({
+    required this.ticket,
+    required this.jeName,
+  });
 
   final Ticket ticket;
+  final String jeName;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    return Material(
-      color: cs.surface,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        onTap: () => context.push('/mukadam/jobs/${ticket.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ticket.ticketRef.isEmpty ? 'Work order' : ticket.ticketRef,
-                          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          ticket.workType ?? 'Road repair',
-                          style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                      ],
+        boxShadow: AppDesign.cardShadow(cs),
+      ),
+      child: Material(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => context.push('/mukadam/jobs/${ticket.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ticket.ticketRef.isEmpty ? 'Work order' : ticket.ticketRef,
+                            style: AppDesign.mono(
+                              tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          Text(
+                            ticket.workType ?? 'Road repair',
+                            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                          ),
+                          if (jeName.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Assigned by JE $jeName',
+                              style: tt.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                  StatusBadge(status: ticket.status),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  ticketStatusLabelForRole(ticket.status, 'mukadam'),
-                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    StatusBadge(status: ticket.status),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    ticketStatusLabelForRole(ticket.status, 'mukadam'),
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

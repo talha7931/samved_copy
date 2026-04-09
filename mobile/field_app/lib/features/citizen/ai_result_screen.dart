@@ -193,8 +193,10 @@ class _AiResultScreenState extends ConsumerState<AiResultScreen> {
                         items: const [
                           DropdownMenuItem(value: 'pothole', child: Text('Pothole')),
                           DropdownMenuItem(value: 'crack', child: Text('Crack')),
-                          DropdownMenuItem(value: 'flooding', child: Text('Flooding')),
-                          DropdownMenuItem(value: 'surface', child: Text('Surface')),
+                          DropdownMenuItem(
+                            value: 'surface_failure',
+                            child: Text('Surface failure'),
+                          ),
                         ],
                         onChanged: (v) => setState(() => _selectedDamage = v),
                       ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/theme.dart';
 import '../../core/widgets/auth_brand_header.dart';
 import '../../core/widgets/gradient_primary_button.dart';
 import '../../providers/providers.dart';
@@ -21,6 +22,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   final _otpFocus = FocusNode();
   bool _loading = false;
   String? _error;
+  bool _cardVisible = false;
   int _resendLeft = 30;
   bool _verifying = false;
 
@@ -30,6 +32,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     _otpFocus.addListener(() => setState(() {}));
     _startResendTimer();
     _code.addListener(_onCodeChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _cardVisible = true);
+    });
   }
 
   @override
@@ -98,7 +103,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       _error = null;
     });
     try {
-      await ref.read(authServiceProvider).signInWithOtp(phoneE164: widget.phoneE164);
+      await ref
+          .read(authServiceProvider)
+          .signInWithOtp(phoneE164: widget.phoneE164);
       if (!mounted) return;
       setState(() => _resendLeft = 30);
       _startResendTimer();
@@ -137,149 +144,160 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     bottomPadding: 56,
                     compactLogo: true,
                   ),
-                  Transform.translate(
-                    offset: const Offset(0, -36),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Material(
-                        color: cs.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          side: BorderSide(
-                            color: cs.outlineVariant.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: AnimatedSlide(
+                      offset: _cardVisible ? Offset.zero : const Offset(0, 0.08),
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      child: AnimatedOpacity(
+                        opacity: _cardVisible ? 1 : 0,
+                        duration: const Duration(milliseconds: 260),
+                        child: Material(
+                          color: cs.surface,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            color: cs.surface,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF1A1C1E).withValues(alpha: 0.06),
-                                blurRadius: 32,
-                                offset: const Offset(0, 12),
-                              ),
-                            ],
+                            side: BorderSide(
+                              color: cs.outlineVariant.withValues(alpha: 0.2),
+                            ),
                           ),
-                          padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'Enter OTP',
-                                style: tt.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: cs.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Code sent to $_maskedPhone',
-                                style: tt.bodyMedium?.copyWith(
-                                  color: cs.onSurfaceVariant.withValues(alpha: 0.85),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    decoration: BoxDecoration(
-                                      color: _otpFocus.hasFocus
-                                          ? cs.surface
-                                          : cs.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: _otpFocus.hasFocus
-                                          ? [
-                                              BoxShadow(
-                                                color: cs.primary.withValues(alpha: 0.12),
-                                                blurRadius: 0,
-                                                spreadRadius: 2,
-                                              ),
-                                            ]
-                                          : null,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 8,
-                                    ),
-                                    child: TextField(
-                                      controller: _code,
-                                      focusNode: _otpFocus,
-                                      keyboardType: TextInputType.number,
-                                      maxLength: 8,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                      ],
-                                      textAlign: TextAlign.center,
-                                      style: tt.headlineSmall?.copyWith(
-                                        letterSpacing: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: cs.onSurface,
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        counterText: '',
-                                        hintText: '• • • • • •',
-                                        hintStyle: tt.headlineSmall?.copyWith(
-                                          letterSpacing: 8,
-                                          color: cs.onSurfaceVariant
-                                              .withValues(alpha: 0.25),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: 20,
-                                    right: 20,
-                                    bottom: -2,
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 280),
-                                      curve: Curves.easeOutCubic,
-                                      height: _otpFocus.hasFocus ? 3 : 0,
-                                      decoration: BoxDecoration(
-                                        color: cs.onTertiaryContainer,
-                                        borderRadius: BorderRadius.circular(99),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (_error != null) ...[
-                                const SizedBox(height: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              color: cs.surface,
+                              boxShadow: AppDesign.cardShadow(cs),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                                 Text(
-                                  _error!,
-                                  style: TextStyle(
-                                    color: cs.error,
-                                    fontSize: 13,
+                                  'Enter OTP',
+                                  style: tt.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Code sent to $_maskedPhone',
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: cs.onSurfaceVariant.withValues(
+                                      alpha: 0.85,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
-                              const SizedBox(height: 28),
-                              GradientPrimaryButton(
-                                onPressed: _loading ? null : _verify,
-                                label: 'Verify & continue',
-                                icon: Icons.check_rounded,
-                                loading: _loading,
-                              ),
-                              const SizedBox(height: 12),
-                              TextButton(
-                                onPressed: (_resendLeft == 0 && !_loading) ? _resendOtp : null,
-                                child: Text(
-                                  _resendLeft == 0
-                                      ? 'Resend OTP'
-                                      : 'Resend OTP in ${_resendLeft}s',
+                                const SizedBox(height: 28),
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      decoration: BoxDecoration(
+                                        color: _otpFocus.hasFocus
+                                            ? cs.surface
+                                            : cs.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: _otpFocus.hasFocus
+                                            ? [
+                                                BoxShadow(
+                                                  color: cs.primary.withValues(
+                                                    alpha: 0.12,
+                                                  ),
+                                                  blurRadius: 0,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      child: TextField(
+                                        controller: _code,
+                                        focusNode: _otpFocus,
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 8,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                        ],
+                                        textAlign: TextAlign.center,
+                                        style: tt.headlineSmall?.copyWith(
+                                          letterSpacing: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: cs.onSurface,
+                                        ),
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          counterText: '',
+                                          hintText: '• • • • • •',
+                                          hintStyle: tt.headlineSmall?.copyWith(
+                                            letterSpacing: 8,
+                                            color: cs.onSurfaceVariant
+                                                .withValues(alpha: 0.25),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      left: 20,
+                                      right: 20,
+                                      bottom: -2,
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 280),
+                                        curve: Curves.easeOutCubic,
+                                        height: _otpFocus.hasFocus ? 3 : 0,
+                                        decoration: BoxDecoration(
+                                          color: cs.onTertiaryContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(99),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                if (_error != null) ...[
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _error!,
+                                    style: TextStyle(
+                                      color: cs.error,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 28),
+                                GradientPrimaryButton(
+                                  onPressed: _loading ? null : _verify,
+                                  label: 'Verify & continue',
+                                  icon: Icons.check_rounded,
+                                  loading: _loading,
+                                ),
+                                const SizedBox(height: 12),
+                                TextButton(
+                                  onPressed:
+                                      (_resendLeft == 0 && !_loading)
+                                          ? _resendOtp
+                                          : null,
+                                  child: Text(
+                                    _resendLeft == 0
+                                        ? 'Resend OTP'
+                                        : 'Resend OTP in ${_resendLeft}s',
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
                   const SizedBox(height: 40),
                 ],
               ),

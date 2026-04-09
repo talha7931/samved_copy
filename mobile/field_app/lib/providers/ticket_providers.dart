@@ -34,10 +34,20 @@ final jeZoneAllTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) 
   return ref.watch(ticketServiceProvider).fetchJeZoneTicketsAll(z);
 });
 
+final mukadamHomeProvider =
+    FutureProvider.autoDispose<MukadamHomeSnapshot>((ref) {
+  return ref.watch(ticketServiceProvider).fetchMukadamHomeSnapshot();
+});
+
 final mukadamInboxProvider = FutureProvider.autoDispose<List<Ticket>>((ref) {
   return ref.watch(ticketServiceProvider).fetchMukadamTickets();
 });
 
 final contractorInboxProvider = FutureProvider.autoDispose<List<Ticket>>((ref) {
   return ref.watch(ticketServiceProvider).fetchContractorTickets();
+});
+
+final contractorHomeProvider =
+    FutureProvider.autoDispose<ContractorHomeSnapshot>((ref) {
+  return ref.watch(ticketServiceProvider).fetchContractorHomeSnapshot();
 });

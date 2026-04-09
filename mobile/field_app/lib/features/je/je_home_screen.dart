@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/theme/theme.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_state.dart';
 import '../../core/widgets/profile_app_bar.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../models/ticket.dart';
 import '../../providers/providers.dart';
@@ -78,11 +81,17 @@ class _JeHomeScreenState extends ConsumerState<JeHomeScreen> {
         ],
       ),
       body: activeAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        loading: () => const ShimmerList(),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(jeInboxProvider),
+        ),
         data: (activeTickets) => allAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('$e')),
+          loading: () => const ShimmerList(),
+          error: (e, _) => ErrorState(
+            message: e.toString(),
+            onRetry: () => ref.invalidate(jeZoneAllTicketsProvider),
+          ),
           data: (allTickets) {
             if (widget.initialProfileOnly) {
               return ListView(
@@ -112,6 +121,8 @@ class _JeHomeScreenState extends ConsumerState<JeHomeScreen> {
             final verified = allTickets.where((t) => t.status == 'verified').length;
             final assigned = allTickets.where((t) => t.status == 'assigned').length;
             final inProgress = allTickets.where((t) => t.status == 'in_progress').length;
+            final qualityCheck =
+                allTickets.where((t) => t.status == 'audit_pending').length;
             final resolved = allTickets.where((t) => t.status == 'resolved').length;
 
             final filtered = _applyFilter(activeTickets, _statusFilter);
@@ -133,7 +144,10 @@ class _JeHomeScreenState extends ConsumerState<JeHomeScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [cs.primary, cs.primaryContainer],
+                        colors: const [
+                          AppDesign.primaryNavy,
+                          AppDesign.primaryContainerNavy,
+                        ],
                       ),
                     ),
                     padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
@@ -180,6 +194,7 @@ class _JeHomeScreenState extends ConsumerState<JeHomeScreen> {
                       'Verified': verified,
                       'Assigned': assigned,
                       'In Progress': inProgress,
+                      'Quality': qualityCheck,
                       'Resolved': resolved,
                     },
                   ),
@@ -320,6 +335,7 @@ class _SummaryChips extends StatelessWidget {
               decoration: BoxDecoration(
                 color: cs.surface,
                 borderRadius: BorderRadius.circular(999),
+                boxShadow: AppDesign.cardShadow(cs),
               ),
               child: Text(
                 '${e.key}: ${e.value}',
@@ -349,6 +365,7 @@ class _FilterRow extends StatelessWidget {
     'verified': 'Verified',
     'assigned': 'Assigned',
     'in_progress': 'In Progress',
+    'audit_pending': 'Quality check',
   };
 
   @override
@@ -367,7 +384,7 @@ class _FilterRow extends StatelessWidget {
               selected: active,
               onSelected: (_) => onSelected(f.key),
               selectedColor: cs.primaryContainer.withValues(alpha: 0.2),
-              labelStyle: TextStyle(
+              labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: active ? cs.primary : cs.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
@@ -435,7 +452,7 @@ class _MapSection extends StatelessWidget {
       case 'HIGH':
         return cs.tertiary;
       case 'MEDIUM':
-        return Colors.green.shade600;
+        return AppDesign.severityColor(cs, 'medium');
       default:
         return cs.primary;
     }
@@ -486,7 +503,9 @@ class _JeTicketTile extends StatelessWidget {
                             ticket.ticketRef.isEmpty
                                 ? ticket.id.substring(0, 8)
                                 : ticket.ticketRef,
-                            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: AppDesign.mono(
+                              tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -519,9 +538,8 @@ class _JeTicketTile extends StatelessWidget {
                                   ),
                                   child: Text(
                                     ticket.severityTier!,
-                                    style: TextStyle(
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                       color: sevColor,
-                                      fontSize: 11,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),

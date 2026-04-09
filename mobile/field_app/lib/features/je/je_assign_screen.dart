@@ -63,6 +63,12 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
     final ticket =
         await ref.read(ticketServiceProvider).fetchTicket(widget.ticketId);
     if (ticket == null) return;
+    if (ticket.status != 'verified') {
+      setState(() {
+        _error = 'Executor assignment is only allowed after verification.';
+      });
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -90,6 +96,7 @@ class _JeAssignScreenState extends ConsumerState<JeAssignScreen> {
       if (!mounted) return;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
       ref.invalidate(jeInboxProvider);
+      ref.invalidate(jeZoneAllTicketsProvider);
       context.go('/je/tasks');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Executor assigned')),

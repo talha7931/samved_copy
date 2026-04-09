@@ -55,12 +55,11 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                     Expanded(
                       child: Text(
                         'No connection. Actions may fail until you are back online.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onErrorContainer,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onErrorContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                   ],

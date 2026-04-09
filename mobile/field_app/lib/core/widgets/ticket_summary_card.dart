@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/ticket.dart';
 import '../constants/status_labels.dart';
+import '../theme/theme.dart';
 
 class TicketSummaryCard extends StatelessWidget {
   const TicketSummaryCard({
@@ -16,11 +17,13 @@ class TicketSummaryCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final severity = (ticket.severityTier ?? 'MEDIUM').toUpperCase();
+    final severityColor = AppDesign.severityColor(cs, severity);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(24),
+        boxShadow: AppDesign.cardShadow(cs),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,7 +33,12 @@ class TicketSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   ticket.ticketRef,
-                  style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: AppDesign.mono(
+                    tt.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: cs.primary,
+                    ),
+                  ),
                 ),
               ),
               Chip(
@@ -38,7 +46,7 @@ class TicketSummaryCard extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 labelStyle: tt.labelMedium?.copyWith(fontWeight: FontWeight.w800),
                 side: BorderSide.none,
-                backgroundColor: cs.tertiaryContainer,
+                backgroundColor: severityColor.withValues(alpha: 0.14),
               ),
             ],
           ),

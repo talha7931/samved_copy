@@ -78,6 +78,7 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
   }
 
   Future<void> _save() async {
+    final currentTicket = await ref.read(ticketServiceProvider).fetchTicket(widget.ticketId);
     final c = _card;
     if (c == null || _damageCause == null) {
       setState(() => _error = 'Select work type and damage cause.');
@@ -115,7 +116,7 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
             ticketId: widget.ticketId,
             actorRole: 'je',
             eventType: 'measurement_recorded',
-            oldStatus: 'open',
+            oldStatus: currentTicket?.status ?? 'open',
             newStatus: 'verified',
             notes: 'JE recorded dimensions and estimate',
             metadata: {
@@ -132,6 +133,7 @@ class _JeMeasureScreenState extends ConsumerState<JeMeasureScreen> {
       if (!mounted) return;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
       ref.invalidate(jeInboxProvider);
+      ref.invalidate(jeZoneAllTicketsProvider);
       context.go('/je/tickets/${widget.ticketId}/assign');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Estimate saved')),

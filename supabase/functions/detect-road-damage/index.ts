@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { callAiService } from "../_shared/ai.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { env } from "../_shared/env.ts";
 import {
   badRequest,
   forbidden,
@@ -34,6 +35,16 @@ type DetectPayload = {
   captured_at?: string;
 };
 
+function isTrustedCaller(req: Request): boolean {
+  const auth = req.headers.get("Authorization") ?? "";
+  const apikey = req.headers.get("apikey") ?? "";
+  const sharedSecret = req.headers.get("X-SSR-Secret") ?? "";
+  const serviceBearer = `Bearer ${env.supabaseServiceRoleKey}`;
+  return auth === serviceBearer ||
+    apikey === env.supabaseServiceRoleKey ||
+    sharedSecret === env.aiServiceSecret;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -59,12 +70,18 @@ serve(async (req) => {
   }
 
   try {
-    const userClient = createUserClient(req);
-    const visibleTicket = await getVisibleTicket(
-      userClient,
-      payload.ticket_id,
-      "id, ticket_ref, source_channel, photo_before",
-    );
+    const adminClient = createAdminClient();
+    const visibleTicket = isTrustedCaller(req)
+      ? await getVisibleTicket(
+        adminClient,
+        payload.ticket_id,
+        "id, ticket_ref, source_channel, photo_before",
+      )
+      : await getVisibleTicket(
+        createUserClient(req),
+        payload.ticket_id,
+        "id, ticket_ref, source_channel, photo_before",
+      );
 
     if (!visibleTicket) {
       return forbidden("You are not allowed to run detection for this ticket.");
@@ -92,7 +109,6 @@ serve(async (req) => {
       return upstreamFailure("AI damage detection failed.", ai);
     }
 
-    const adminClient = createAdminClient();
     const patch = {
       damage_type: ai.damage_type,
       ai_confidence: ai.ai_confidence,
@@ -145,4 +161,3 @@ serve(async (req) => {
     );
   }
 });
-

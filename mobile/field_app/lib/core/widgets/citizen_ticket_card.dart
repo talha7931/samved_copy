@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/ticket.dart';
+import '../theme/theme.dart';
 
 /// Compact horizontal stepper (4 milestones) aligned with Stitch "Recent Grievances" cards.
 int _citizenVisualStep(String status) {
@@ -36,34 +37,12 @@ class CitizenTicketCard extends StatelessWidget {
 
   Color _severityBg(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    switch (ticket.severityTier?.toUpperCase()) {
-      case 'CRITICAL':
-        return cs.errorContainer;
-      case 'HIGH':
-        return cs.tertiaryContainer;
-      case 'MEDIUM':
-        return cs.secondaryContainer;
-      case 'LOW':
-        return cs.primaryContainer.withValues(alpha: 0.35);
-      default:
-        return cs.surfaceContainerHighest;
-    }
+    return AppDesign.severityBackground(cs, ticket.severityTier);
   }
 
   Color _severityFg(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    switch (ticket.severityTier?.toUpperCase()) {
-      case 'CRITICAL':
-        return cs.onErrorContainer;
-      case 'HIGH':
-        return cs.onTertiaryContainer;
-      case 'MEDIUM':
-        return cs.onSecondaryContainer;
-      case 'LOW':
-        return cs.onPrimaryContainer;
-      default:
-        return cs.onSurfaceVariant;
-    }
+    return AppDesign.severityColor(cs, ticket.severityTier);
   }
 
   @override
@@ -76,17 +55,22 @@ class CitizenTicketCard extends StatelessWidget {
         ? ticket.addressText!
         : '${ticket.latitude.toStringAsFixed(4)}, ${ticket.longitude.toStringAsFixed(4)}';
 
-    return Material(
-      color: cs.surface,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppDesign.cardShadow(cs),
+      ),
+      child: Material(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -143,9 +127,11 @@ class CitizenTicketCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           ticket.ticketRef.isEmpty ? 'Pending ref' : ticket.ticketRef,
-                          style: tt.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: cs.primary,
+                          style: AppDesign.mono(
+                            tt.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.primary,
+                            ),
                           ),
                         ),
                         if (ticket.severityTier != null) ...[
@@ -196,8 +182,9 @@ class CitizenTicketCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              _MiniStepper(step: step, colorScheme: cs, textTheme: tt),
-            ],
+                _MiniStepper(step: step, colorScheme: cs, textTheme: tt),
+              ],
+            ),
           ),
         ),
       ),
@@ -294,7 +281,6 @@ class _MiniStepper extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.labelSmall?.copyWith(
                   fontWeight: active ? FontWeight.w900 : FontWeight.w600,
-                  fontSize: 9,
                   color: past
                       ? colorScheme.onSurfaceVariant
                       : active

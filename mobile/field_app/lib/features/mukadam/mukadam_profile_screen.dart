@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/theme/theme.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
@@ -40,11 +41,22 @@ class _MukadamProfileScreenState extends ConsumerState<MukadamProfileScreen> {
             .length ??
         0;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mukadam Profile')),
+      appBar: AppBar(
+        title: const Text('Mukadam Profile'),
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppDesign.navyGradient),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: AppDesign.cardShadow(Theme.of(context).colorScheme),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -59,7 +71,9 @@ class _MukadamProfileScreenState extends ConsumerState<MukadamProfileScreen> {
               ),
             ),
           ),
-          SwitchListTile(
+          _tileCard(
+            context,
+            child: SwitchListTile(
             title: const Text('Language: Marathi'),
             value: _mr,
             onChanged: (v) async {
@@ -67,8 +81,10 @@ class _MukadamProfileScreenState extends ConsumerState<MukadamProfileScreen> {
               await p.setBool('mukadam_lang_mr', v);
               setState(() => _mr = v);
             },
-          ),
-          SwitchListTile(
+          )),
+          _tileCard(
+            context,
+            child: SwitchListTile(
             title: const Text('Notifications'),
             value: _notif,
             onChanged: (v) async {
@@ -76,7 +92,7 @@ class _MukadamProfileScreenState extends ConsumerState<MukadamProfileScreen> {
               await p.setBool('mukadam_notif', v);
               setState(() => _notif = v);
             },
-          ),
+          )),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: () async {
@@ -87,6 +103,21 @@ class _MukadamProfileScreenState extends ConsumerState<MukadamProfileScreen> {
             child: const Text('Sign Out'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tileCard(BuildContext context, {required Widget child}) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppDesign.cardShadow(cs),
+        ),
+        child: child,
       ),
     );
   }

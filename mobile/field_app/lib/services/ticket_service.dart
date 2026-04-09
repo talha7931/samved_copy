@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config/app_env.dart';
 import '../models/ticket.dart';
 import '../models/ticket_dimensions.dart';
 
@@ -14,6 +18,45 @@ class ContractorOption {
   const ContractorOption({required this.id, required this.companyName});
   final String id;
   final String companyName;
+}
+
+class MukadamHomeSnapshot {
+  const MukadamHomeSnapshot({
+    required this.rows,
+    required this.jeNames,
+    required this.completedThisWeekCount,
+  });
+
+  final List<Map<String, dynamic>> rows;
+  final Map<String, String> jeNames;
+  final int completedThisWeekCount;
+
+  static MukadamHomeSnapshot empty() => const MukadamHomeSnapshot(
+        rows: [],
+        jeNames: {},
+        completedThisWeekCount: 0,
+      );
+}
+
+class ContractorHomeSnapshot {
+  const ContractorHomeSnapshot({
+    required this.rows,
+    required this.jeNames,
+    required this.pendingAmount,
+    required this.pendingCount,
+  });
+
+  final List<Map<String, dynamic>> rows;
+  final Map<String, String> jeNames;
+  final double pendingAmount;
+  final int pendingCount;
+
+  static ContractorHomeSnapshot empty() => const ContractorHomeSnapshot(
+        rows: [],
+        jeNames: {},
+        pendingAmount: 0,
+        pendingCount: 0,
+      );
 }
 
 class TicketLookup {
@@ -72,18 +115,79 @@ class TicketService {
     'cross_assigned',
   ];
 
+  /// Edge Functions JWT gate + [AuthHttpClient] use `putIfAbsent` for
+  /// `Authorization`, so a stale Bearer on the functions client headers would
+  /// never be replaced by the current session. Always send an explicit,
+  /// freshly refreshed user access token.
+  Future<String> _freshAccessTokenForFunctions() async {
+    final current = _client.auth.currentSession;
+    if (current == null) {
+      throw Exception('Sign in required for cloud actions (no session).');
+    }
+
+    // On web, local cached access tokens can become invalid before `isExpired`
+    // flips. Force a refresh before edge-function calls to avoid 401 Invalid JWT.
+    final refreshed = await _client.auth.refreshSession();
+    final session = refreshed.session ?? _client.auth.currentSession ?? current;
+    final token = session.accessToken;
+    if (token.isEmpty) {
+      throw Exception('Sign in required (empty access token).');
+    }
+    return token;
+  }
+
+  Map<String, dynamic>? _parseJsonBody(String body) {
+    if (body.trim().isEmpty) return null;
+    final decoded = jsonDecode(body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    throw Exception('Unexpected response shape');
+  }
+
   Future<Map<String, dynamic>?> _invokeFunction(
     String name,
     Map<String, dynamic> body,
   ) async {
-    final response = await _client.functions.invoke(name, body: body);
-    final data = response.data;
-    if (data == null) return null;
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) {
-      return Map<String, dynamic>.from(data);
+    Future<Map<String, dynamic>?> invokeWithToken(String token) async {
+      final uri = Uri.parse('${AppEnv.supabaseUrl}/functions/v1/$name');
+      final response = await http.post(
+        uri,
+        headers: {
+          'apikey': AppEnv.supabaseAnonKey,
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 401) {
+        throw FunctionException(
+          status: 401,
+          details: response.body,
+          reasonPhrase: response.reasonPhrase,
+        );
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+          'Function $name failed (${response.statusCode}): ${response.body}',
+        );
+      }
+
+      return _parseJsonBody(response.body);
     }
-    throw Exception('Unexpected response from $name');
+
+    var token = await _freshAccessTokenForFunctions();
+    try {
+      return await invokeWithToken(token);
+    } on FunctionException catch (e) {
+      if (e.status != 401) rethrow;
+      final refreshed = await _client.auth.refreshSession();
+      final next = refreshed.session?.accessToken ?? _client.auth.currentSession?.accessToken;
+      if (next == null || next.isEmpty || next == token) rethrow;
+      token = next;
+      return await invokeWithToken(token);
+    }
   }
 
   Future<List<Ticket>> fetchCitizenTickets() async {
@@ -124,31 +228,142 @@ class TicketService {
   }
 
   Future<List<Ticket>> fetchMukadamTickets() async {
-    final uid = _client.auth.currentUser?.id;
-    if (uid == null) return [];
-    final rows = await _client
-        .from('tickets')
-        .select()
-        .eq('assigned_mukadam', uid)
-        .inFilter('status', ['assigned', 'in_progress', 'audit_pending', 'resolved'])
-        .order('updated_at', ascending: false);
-    return (rows as List<dynamic>)
-        .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e as Map)))
+    final snap = await fetchMukadamHomeSnapshot();
+    return snap.rows
+        .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
 
   Future<List<Ticket>> fetchContractorTickets() async {
+    final snap = await fetchContractorHomeSnapshot();
+    return snap.rows
+        .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  /// Mukadam work-order snapshot with JE names and weekly completion summary.
+  Future<MukadamHomeSnapshot> fetchMukadamHomeSnapshot() async {
     final uid = _client.auth.currentUser?.id;
-    if (uid == null) return [];
-    final rows = await _client
+    if (uid == null) return MukadamHomeSnapshot.empty();
+
+    final raw = await _client
         .from('tickets')
-        .select()
+        .select(
+          'id, ticket_ref, status, severity_tier, address_text, work_type, dimensions, '
+          'created_at, updated_at, assigned_je, assigned_contractor, photo_before, '
+          'je_checkin_time, zone_id, prabhag_id, latitude, longitude, department_id, source_channel',
+        )
+        .eq('assigned_mukadam', uid)
+        .inFilter('status', ['assigned', 'in_progress', 'audit_pending'])
+        .order('created_at', ascending: false);
+
+    final list = (raw as List<dynamic>)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .where((m) => m['assigned_contractor'] == null)
+        .toList();
+
+    final jeIds = list
+        .map((m) => m['assigned_je'] as String?)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    final jeNames = <String, String>{};
+    if (jeIds.isNotEmpty) {
+      final pr = await _client
+          .from('profiles')
+          .select('id, full_name')
+          .inFilter('id', jeIds);
+      for (final p in pr as List<dynamic>) {
+        final m = Map<String, dynamic>.from(p as Map);
+        final id = m['id'] as String?;
+        if (id != null) {
+          jeNames[id] = m['full_name'] as String? ?? '';
+        }
+      }
+    }
+
+    final weekAgo =
+        DateTime.now().toUtc().subtract(const Duration(days: 7)).toIso8601String();
+    final weekRows = await _client
+        .from('tickets')
+        .select('id, assigned_contractor')
+        .eq('assigned_mukadam', uid)
+        .inFilter('status', ['audit_pending', 'resolved'])
+        .gte('updated_at', weekAgo);
+    final weekFiltered = (weekRows as List<dynamic>)
+        .where((e) => (e as Map<String, dynamic>)['assigned_contractor'] == null)
+        .length;
+
+    return MukadamHomeSnapshot(
+      rows: list,
+      jeNames: jeNames,
+      completedThisWeekCount: weekFiltered,
+    );
+  }
+
+  Future<int> countMukadamJobsThisWeek() async {
+    final snap = await fetchMukadamHomeSnapshot();
+    return snap.completedThisWeekCount;
+  }
+
+  /// Contractor snapshot with JE names and pending payment insight.
+  Future<ContractorHomeSnapshot> fetchContractorHomeSnapshot() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return ContractorHomeSnapshot.empty();
+
+    final raw = await _client
+        .from('tickets')
+        .select(
+          'id, ticket_ref, status, severity_tier, address_text, road_name, work_type, dimensions, '
+          'estimated_cost, rate_per_unit, job_order_ref, created_at, updated_at, assigned_je, '
+          'assigned_mukadam, assigned_contractor, zone_id, prabhag_id',
+        )
         .eq('assigned_contractor', uid)
         .inFilter('status', ['assigned', 'in_progress', 'audit_pending', 'resolved'])
-        .order('updated_at', ascending: false);
-    return (rows as List<dynamic>)
-        .map((e) => Ticket.fromJson(Map<String, dynamic>.from(e as Map)))
+        .order('created_at', ascending: false);
+
+    final rows = (raw as List<dynamic>)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .where((m) => m['assigned_mukadam'] == null)
         .toList();
+
+    final jeIds = rows
+        .map((m) => m['assigned_je'] as String?)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    final jeNames = <String, String>{};
+    if (jeIds.isNotEmpty) {
+      final prs = await _client
+          .from('profiles')
+          .select('id, full_name')
+          .inFilter('id', jeIds);
+      for (final p in prs as List<dynamic>) {
+        final m = Map<String, dynamic>.from(p as Map);
+        final id = m['id'] as String?;
+        if (id != null) {
+          jeNames[id] = m['full_name'] as String? ?? '';
+        }
+      }
+    }
+
+    double pendingAmount = 0;
+    int pendingCount = 0;
+    for (final row in rows) {
+      if (row['status'] == 'audit_pending') {
+        pendingCount += 1;
+        pendingAmount += (row['estimated_cost'] as num?)?.toDouble() ?? 0;
+      }
+    }
+
+    return ContractorHomeSnapshot(
+      rows: rows,
+      jeNames: jeNames,
+      pendingAmount: pendingAmount,
+      pendingCount: pendingCount,
+    );
   }
 
   Future<Ticket?> fetchTicket(String id) async {
@@ -317,6 +532,8 @@ class TicketService {
       'je_checkin_lng': lng,
       'je_checkin_time': DateTime.now().toUtc().toIso8601String(),
       'je_checkin_distance_m': distanceM,
+      'status': 'verified',
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', ticketId);
   }
 
@@ -403,6 +620,16 @@ class TicketService {
       'status': 'rejected',
       'department_note': reason,
     }).eq('id', ticketId);
+  }
+
+  /// Supabase: only `audit_pending` → `resolved` with SSIM pass or citizen confirmation.
+  Future<void> jeMarkResolvedAfterAudit(String ticketId) async {
+    await _client.from('tickets').update({'status': 'resolved'}).eq('id', ticketId);
+  }
+
+  /// Supabase: `audit_pending` → `in_progress` when repair proof is insufficient.
+  Future<void> jeSendBackForRework(String ticketId) async {
+    await _client.from('tickets').update({'status': 'in_progress'}).eq('id', ticketId);
   }
 
   Future<List<MukadamOption>> listMukadamsInZone(int zoneId) async {

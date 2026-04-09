@@ -49,9 +49,43 @@ class _MukadamInProgressScreenState extends ConsumerState<MukadamInProgressScree
           if (ticket == null) return const Center(child: Text('Ticket not found'));
           final area = ticket.dimensions?.areaSqm.toStringAsFixed(2) ?? '-';
           final depth = ((ticket.dimensions?.depthM ?? 0) * 100).toStringAsFixed(0);
+          final canSubmitProof = ticket.status == 'in_progress';
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (!canSubmitProof) ...[
+                Card(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Status: ${ticket.status.replaceAll('_', ' ')}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          ticket.status == 'audit_pending'
+                              ? 'Completion proof is submitted. Waiting for quality audit.'
+                              : 'This job is no longer in progress. Proof upload is only available during in progress.',
+                        ),
+                        if (ticket.status == 'audit_pending' ||
+                            ticket.status == 'resolved') ...[
+                          const SizedBox(height: 10),
+                          OutlinedButton(
+                            onPressed: () =>
+                                context.push('/mukadam/camera/${ticket.id}'),
+                            child: const Text('View completion proof'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Text('Live timer: ${_elapsed.inHours.toString().padLeft(2, '0')}:${(_elapsed.inMinutes % 60).toString().padLeft(2, '0')}:${(_elapsed.inSeconds % 60).toString().padLeft(2, '0')}'),
               const SizedBox(height: 10),
               Card(
@@ -79,7 +113,9 @@ class _MukadamInProgressScreenState extends ConsumerState<MukadamInProgressScree
                 return CheckboxListTile(
                   title: Text(entry.value),
                   value: _checked[i],
-                  onChanged: (v) => setState(() => _checked[i] = v ?? false),
+                  onChanged: canSubmitProof
+                      ? (v) => setState(() => _checked[i] = v ?? false)
+                      : null,
                   contentPadding: EdgeInsets.zero,
                 );
               }),
@@ -89,19 +125,22 @@ class _MukadamInProgressScreenState extends ConsumerState<MukadamInProgressScree
               TextField(
                 controller: _notes,
                 maxLines: 3,
+                enabled: canSubmitProof,
                 decoration: const InputDecoration(
                   labelText: 'Field notes (optional)',
                 ),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
-                onPressed: () => context.push('/mukadam/issue/${ticket.id}'),
+                onPressed: canSubmitProof
+                    ? () => context.push('/mukadam/issue/${ticket.id}')
+                    : null,
                 icon: const Icon(Icons.report_problem_outlined),
                 label: const Text('Flag Blocker'),
               ),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: _checked.every((e) => e)
+                onPressed: canSubmitProof && _checked.every((e) => e)
                     ? () => context.push(
                           '/mukadam/camera/${ticket.id}',
                           extra: _notes.text.trim(),

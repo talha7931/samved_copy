@@ -49,9 +49,43 @@ class _ContractorInProgressScreenState
         error: (e, _) => Center(child: Text('$e')),
         data: (ticket) {
           if (ticket == null) return const Center(child: Text('Ticket not found'));
+          final canSubmitProof = ticket.status == 'in_progress';
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (!canSubmitProof) ...[
+                Card(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Status: ${ticket.status.replaceAll('_', ' ')}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          ticket.status == 'audit_pending'
+                              ? 'Completion proof is submitted. Waiting for quality audit.'
+                              : 'This job is no longer in progress. Proof upload is only available during in progress.',
+                        ),
+                        if (ticket.status == 'audit_pending' ||
+                            ticket.status == 'resolved') ...[
+                          const SizedBox(height: 10),
+                          OutlinedButton(
+                            onPressed: () =>
+                                context.push('/contractor/camera/${ticket.id}'),
+                            child: const Text('View completion proof'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Text(
                 'Live timer: ${_elapsed.inHours.toString().padLeft(2, '0')}:${(_elapsed.inMinutes % 60).toString().padLeft(2, '0')}:${(_elapsed.inSeconds % 60).toString().padLeft(2, '0')}',
               ),
@@ -80,7 +114,9 @@ class _ContractorInProgressScreenState
                 return CheckboxListTile(
                   title: Text(entry.value),
                   value: _checked[i],
-                  onChanged: (v) => setState(() => _checked[i] = v ?? false),
+                  onChanged: canSubmitProof
+                      ? (v) => setState(() => _checked[i] = v ?? false)
+                      : null,
                   contentPadding: EdgeInsets.zero,
                 );
               }),
@@ -93,11 +129,12 @@ class _ContractorInProgressScreenState
               TextField(
                 controller: _notes,
                 maxLines: 3,
+                enabled: canSubmitProof,
                 decoration: const InputDecoration(labelText: 'Field notes'),
               ),
               const SizedBox(height: 14),
               FilledButton(
-                onPressed: _checked.every((e) => e)
+                onPressed: canSubmitProof && _checked.every((e) => e)
                     ? () => context.push('/contractor/camera/${ticket.id}', extra: _notes.text.trim())
                     : null,
                 child: const Text('Submit Proof of Repair'),

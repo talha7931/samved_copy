@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/theme/theme.dart';
 import '../../core/widgets/citizen_ticket_card.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_state.dart';
 import '../../core/widgets/profile_app_bar.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../providers/providers.dart';
 import '../../providers/ticket_providers.dart';
 
@@ -60,8 +63,11 @@ class CitizenHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: ticketsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        loading: () => const ShimmerList(),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(citizenTicketsProvider),
+        ),
         data: (tickets) {
           if (tickets.isEmpty) {
             return CustomScrollView(
@@ -105,13 +111,7 @@ class CitizenHomeScreen extends ConsumerWidget {
                     onTap: () => context.push('/citizen/tickets/${t.id}'),
                     child: Icon(
                       Icons.location_on,
-                      color: switch ((t.severityTier ?? '').toLowerCase()) {
-                        'critical' => const Color(0xFFBA1A1A),
-                        'high' => const Color(0xFFE46500),
-                        'medium' => const Color(0xFF455F87),
-                        'low' => const Color(0xFF22C55E),
-                        _ => cs.primary,
-                      },
+                      color: AppDesign.severityColor(cs, t.severityTier),
                       size: 40,
                     ),
                   ),
@@ -305,8 +305,8 @@ class _HeroReportCard extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    cs.tertiary,
-                    cs.onTertiaryContainer.withValues(alpha: 0.95),
+                    AppDesign.accentOrange,
+                    AppDesign.accentOrangeDeep,
                   ],
                 ),
               ),
@@ -415,11 +415,7 @@ class _CitizenSummaryCard extends StatelessWidget {
         color: cs.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
+          ...AppDesign.cardShadow(cs),
         ],
       ),
       child: Column(

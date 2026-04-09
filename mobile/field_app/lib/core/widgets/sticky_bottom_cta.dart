@@ -23,6 +23,13 @@ class StickyBottomCta extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       child: SafeArea(
@@ -37,7 +44,7 @@ class StickyBottomCta extends StatelessWidget {
             ),
             if (secondaryLabel != null) ...[
               const SizedBox(height: 8),
-              TextButton(
+              OutlinedButton(
                 onPressed: onSecondaryTap,
                 child: Text(secondaryLabel!),
               ),
