@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/theme/theme.dart';
 import '../../providers/providers.dart';
 
 class ContractorProfileScreen extends ConsumerStatefulWidget {
@@ -43,11 +44,22 @@ class _ContractorProfileScreenState extends ConsumerState<ContractorProfileScree
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Contractor Profile')),
+      appBar: AppBar(
+        title: const Text('Contractor Profile'),
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppDesign.navyGradient),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: AppDesign.cardShadow(Theme.of(context).colorScheme),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -64,30 +76,36 @@ class _ContractorProfileScreenState extends ConsumerState<ContractorProfileScree
               ),
             ),
           ),
-          SwitchListTile(
+          _tileCard(
+            context,
+            child: SwitchListTile(
             title: const Text('New Job Assignments'),
             value: _notifJobs,
             onChanged: (v) {
               setState(() => _notifJobs = v);
               _save('contractor_notif_jobs', v);
             },
-          ),
-          SwitchListTile(
+          )),
+          _tileCard(
+            context,
+            child: SwitchListTile(
             title: const Text('Payment Status Updates'),
             value: _notifPayment,
             onChanged: (v) {
               setState(() => _notifPayment = v);
               _save('contractor_notif_payment', v);
             },
-          ),
-          SwitchListTile(
+          )),
+          _tileCard(
+            context,
+            child: SwitchListTile(
             title: const Text('SLA Breach Alerts'),
             value: _notifSla,
             onChanged: (v) {
               setState(() => _notifSla = v);
               _save('contractor_notif_sla', v);
             },
-          ),
+          )),
           const SizedBox(height: 14),
           FilledButton(
             onPressed: () async {
@@ -98,6 +116,21 @@ class _ContractorProfileScreenState extends ConsumerState<ContractorProfileScree
             child: const Text('Sign Out'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tileCard(BuildContext context, {required Widget child}) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppDesign.cardShadow(cs),
+        ),
+        child: child,
       ),
     );
   }

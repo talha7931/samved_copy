@@ -10,6 +10,7 @@ import {
 } from '@/lib/dashboard/commissionerKpis';
 import { BudgetGauge, MiniBudgetGauge } from '@/components/dashboard/BudgetGauge';
 import { STATUS_DISPLAY } from '@/lib/constants/status';
+import { KpiCard } from '@/components/shared/DataDisplay';
 import type { Ticket, Zone, TicketStatus } from '@/lib/types/database';
 
 const MapboxMap = dynamic(
@@ -184,19 +185,18 @@ export function CommissionerDashboardClient({
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
-            { label: 'Total Open', value: kpis.totalOpen, color: 'text-white', accent: 'bg-accent' },
-            { label: 'Critical', value: kpis.criticalOpen, color: 'text-red-400', accent: 'bg-red-500' },
-            { label: 'Chronic', value: kpis.chronicCount, color: 'text-purple-400', accent: 'bg-purple-500' },
-            { label: 'Resolved Today', value: kpis.resolvedToday, color: 'text-green-400', accent: 'bg-green-500' },
-            { label: 'SLA Breached', value: kpis.slaBreach, color: 'text-amber-400', accent: 'bg-amber-500' },
+            { label: 'Total Open', value: kpis.totalOpen, accent: 'bg-accent' },
+            { label: 'Critical', value: kpis.criticalOpen, accent: 'bg-red-500' },
+            { label: 'Chronic', value: kpis.chronicCount, accent: 'bg-purple-500' },
+            { label: 'Resolved Today', value: kpis.resolvedToday, accent: 'bg-green-500' },
+            { label: 'SLA Breached', value: kpis.slaBreach, accent: 'bg-amber-500' },
           ].map((kpi) => (
-            <div key={kpi.label} className="kpi-card bg-warroom-surface border-warroom-border relative overflow-hidden">
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${kpi.accent}`} />
-            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">
-              {kpi.label}
-            </p>
-            <span className={`text-3xl font-headline font-black ${kpi.color}`}>{kpi.value}</span>
-          </div>
+            <KpiCard
+              key={kpi.label}
+              label={kpi.label}
+              value={kpi.value}
+              accentColor={kpi.accent}
+            />
         ))}
       </div>
 

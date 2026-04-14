@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ROLE_DISPLAY, ROLE_NAV } from '@/lib/constants/roles';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { KpiCard } from '@/components/shared/DataDisplay';
 
 const DASHBOARD_CARDS = [
   { slug: 'je', icon: 'assignment', color: 'bg-blue-500' },
@@ -31,6 +32,14 @@ export default async function AdminDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Defense-in-depth: verify super_admin role server-side
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (adminProfile?.role !== 'super_admin') return null;
+
   const { count: totalUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
   const { count: totalTickets } = await supabase.from('tickets').select('id', { count: 'exact', head: true });
   const { data: recentEvents } = await supabase
@@ -42,18 +51,9 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Users</p>
-          <p className="text-3xl font-headline font-black text-primary">{totalUsers ?? 0}</p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Tickets</p>
-          <p className="text-3xl font-headline font-black text-primary">{totalTickets ?? 0}</p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">SSIM Threshold</p>
-          <p className="text-3xl font-headline font-black text-primary">0.75</p>
-        </div>
+        <KpiCard label="Total Users" value={totalUsers ?? 0} accentColor="bg-primary" icon="group" />
+        <KpiCard label="Total Tickets" value={totalTickets ?? 0} accentColor="bg-accent" icon="confirmation_number" />
+        <KpiCard label="SSIM Threshold" value="0.75" accentColor="bg-blue-500" icon="tune" />
       </div>
 
       <div>

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/status_labels.dart';
+import '../../core/theme/theme.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/sticky_bottom_cta.dart';
 import '../../providers/ticket_providers.dart';
 
@@ -35,8 +38,11 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
         ],
       ),
       body: asyncTicket.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        loading: () => const ShimmerList(),
+        error: (e, _) => ErrorState(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(ticketDetailProvider(ticketId)),
+        ),
         data: (ticket) {
           if (ticket == null) return const Center(child: Text('Ticket not found'));
           final lookupAsync = ref.watch(ticketLookupProvider(ticket));
@@ -48,11 +54,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [cs.primary, cs.primaryContainer],
-                    ),
+                    gradient: AppDesign.navyGradient,
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
                   child: Column(
@@ -69,9 +71,11 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Text(
                         ticket.ticketRef.isEmpty ? 'Reference pending' : ticket.ticketRef,
-                        style: tt.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                        style: AppDesign.mono(
+                          tt.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -102,6 +106,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: cs.surface,
                       borderRadius: BorderRadius.circular(20),
+                      boxShadow: AppDesign.cardShadow(cs),
                     ),
                     padding: const EdgeInsets.all(14),
                     child: Row(
@@ -122,6 +127,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: cs.surface,
                     borderRadius: BorderRadius.circular(24),
+                    boxShadow: AppDesign.cardShadow(cs),
                   ),
                   padding: const EdgeInsets.all(18),
                   child: _StatusStepper(status: ticket.status),
@@ -130,14 +136,15 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                 if (ticket.primaryBeforePhoto != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: CachedNetworkImage(
-                      imageUrl: ticket.primaryBeforePhoto!,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => const SizedBox(
-                        height: 220,
-                        child: Center(child: CircularProgressIndicator()),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 10,
+                      child: CachedNetworkImage(
+                        imageUrl: ticket.primaryBeforePhoto!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => const SizedBox(
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
                       ),
                     ),
                   ),
@@ -149,6 +156,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: cs.surface,
                       borderRadius: BorderRadius.circular(18),
+                      boxShadow: AppDesign.cardShadow(cs),
                     ),
                     padding: const EdgeInsets.all(14),
                     child: Row(
@@ -179,6 +187,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: cs.surface,
                       borderRadius: BorderRadius.circular(24),
+                      boxShadow: AppDesign.cardShadow(cs),
                     ),
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -205,6 +214,7 @@ class CitizenTicketDetailScreen extends ConsumerWidget {
                     color: cs.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border(left: BorderSide(color: cs.tertiary, width: 4)),
+                    boxShadow: AppDesign.cardShadow(cs),
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Text(

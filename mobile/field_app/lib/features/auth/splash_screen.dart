@@ -45,6 +45,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       return;
     }
 
+    if (profile.role == 'citizen') {
+      final user = Supabase.instance.client.auth.currentUser;
+      final regDone = user?.userMetadata?['registration_complete'] == true;
+      if (!regDone && (profile.fullName.trim().isEmpty)) {
+        context.go('/register');
+        return;
+      }
+    }
+
     ref.invalidate(profileProvider);
 
     if (isWebHandoffRole(profile.role)) {

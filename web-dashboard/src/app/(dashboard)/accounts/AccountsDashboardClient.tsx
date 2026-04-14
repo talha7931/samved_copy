@@ -18,6 +18,7 @@ type AccountsKpis = {
 export type AccountsDashboardPayload = {
   pendingBills: ContractorBill[];
   kpis: AccountsKpis;
+  contractorNames: Record<string, string>;
 };
 
 interface AccountsDashboardClientProps {
@@ -60,13 +61,14 @@ function computeKpis(allBills: ContractorBill[], pendingBills: ContractorBill[])
 
 async function fetchAccountsDashboard(): Promise<AccountsDashboardPayload> {
   const supabase = createClient();
-  const [pendingRes, allRes] = await Promise.all([
+  const [pendingRes, allRes, contractorsRes] = await Promise.all([
     supabase
       .from('contractor_bills')
       .select(BILL_FIELDS)
       .in('status', ['submitted', 'accounts_review'])
       .order('submitted_at', { ascending: false }),
     supabase.from('contractor_bills').select(BILL_FIELDS),
+    supabase.from('contractors').select('id, company_name'),
   ]);
 
   if (pendingRes.error) throw new Error(pendingRes.error.message);
@@ -75,9 +77,15 @@ async function fetchAccountsDashboard(): Promise<AccountsDashboardPayload> {
   const pendingBills = (pendingRes.data || []) as unknown as ContractorBill[];
   const allBills = (allRes.data || []) as unknown as ContractorBill[];
 
+  const contractorNames: Record<string, string> = {};
+  for (const c of contractorsRes.data || []) {
+    contractorNames[(c as { id: string }).id] = (c as { company_name: string }).company_name;
+  }
+
   return {
     pendingBills,
     kpis: computeKpis(allBills, pendingBills),
+    contractorNames,
   };
 }
 
@@ -92,7 +100,7 @@ export function AccountsDashboardClient({ initialDashboard }: AccountsDashboardC
     initialData: initialDashboard,
   });
 
-  const { pendingBills, kpis } = dashboard;
+  const { pendingBills, kpis, contractorNames } = dashboard;
 
   useEffect(() => {
     setSelectedBill((previous) => {
@@ -217,7 +225,7 @@ export function AccountsDashboardClient({ initialDashboard }: AccountsDashboardC
                   <div className="mb-2 flex items-start justify-between">
                     <div>
                       <p className="text-xs font-bold text-primary">{bill.bill_ref}</p>
-                      <h3 className="text-sm font-bold text-slate-900">{bill.contractor_id.slice(0, 12)}...</h3>
+                      <h3 className="text-sm font-bold text-slate-900">{contractorNames[bill.contractor_id] || bill.contractor_id.slice(0, 12)}</h3>
                     </div>
                     <BillStatusPill status={bill.status} />
                   </div>

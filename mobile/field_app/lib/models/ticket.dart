@@ -43,6 +43,9 @@ class Ticket {
     this.estimatedCost,
     this.jobOrderRef,
     this.billId,
+    this.ssimScore,
+    this.ssimPass,
+    this.citizenConfirmed,
   });
 
   final String id;
@@ -86,6 +89,10 @@ class Ticket {
   final double? estimatedCost;
   final String? jobOrderRef;
   final String? billId;
+  /// SSIM 0–1; schema uses inverse rule (lower often means pass after repair).
+  final double? ssimScore;
+  final bool? ssimPass;
+  final bool? citizenConfirmed;
 
   String? get primaryBeforePhoto =>
       photoBefore.isNotEmpty ? photoBefore.first : null;
@@ -139,6 +146,9 @@ class Ticket {
       estimatedCost: (json['estimated_cost'] as num?)?.toDouble(),
       jobOrderRef: json['job_order_ref'] as String?,
       billId: json['bill_id'] as String?,
+      ssimScore: (json['ssim_score'] as num?)?.toDouble(),
+      ssimPass: json['ssim_pass'] as bool?,
+      citizenConfirmed: json['citizen_confirmed'] as bool?,
     );
   }
 }

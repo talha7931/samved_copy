@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -50,58 +52,95 @@ class RoleShellScaffold extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           decoration: BoxDecoration(
-            color: cs.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: cs.shadow.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: cs.shadow.withValues(alpha: 0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: Row(
-            children: [
-              for (var i = 0; i < items.length; i++)
-                Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(24),
-                    onTap: () => context.go(items[i].location),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: currentIndex == i ? cs.primary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              currentIndex == i ? items[i].activeIcon : items[i].icon,
-                              size: 20,
-                              color: currentIndex == i ? cs.onPrimary : cs.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              items[i].label,
-                              style: tt.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: currentIndex == i ? cs.onPrimary : cs.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.92),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
                     ),
                   ),
                 ),
-            ],
+                child: Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: () => context.go(items[i].location),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: currentIndex == i
+                                    ? cs.tertiaryContainer.withValues(alpha: 0.2)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: currentIndex == i
+                                          ? cs.tertiaryContainer
+                                          : Colors.transparent,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      currentIndex == i
+                                          ? items[i].activeIcon
+                                          : items[i].icon,
+                                      size: 20,
+                                      color: currentIndex == i
+                                          ? cs.onTertiaryContainer
+                                          : Colors.white.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    items[i].label.toUpperCase(),
+                                    style: tt.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: currentIndex == i
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

@@ -16,6 +16,21 @@ class AuthService {
     await _client.auth.signInWithOtp(phone: phoneE164);
   }
 
+  /// Whether [phoneE164] already has a Supabase auth user.
+  /// Returns null when RPC is unavailable (migration not applied).
+  Future<bool?> citizenPhoneRegistered(String phoneE164) async {
+    try {
+      final result = await _client.rpc<dynamic>(
+        'citizen_phone_registered',
+        params: {'p_phone': phoneE164.trim()},
+      );
+      if (result is bool) return result;
+      return result == true;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<AuthResponse> verifyOtp({
     required String phoneE164,
     required String token,
@@ -43,6 +58,19 @@ class AuthService {
         ? '+91$digits'
         : (digits.startsWith('91') ? '+$digits' : '+$digits');
     return _client.auth.signInWithPassword(phone: phone, password: password);
+  }
+
+  /// Attempt to refresh the current session. If refresh fails (e.g. token
+  /// revoked server-side), sign out so the router redirects to login.
+  /// Returns `true` if refresh succeeded, `false` if signed out.
+  Future<bool> refreshOrSignOut() async {
+    try {
+      final response = await _client.auth.refreshSession();
+      return response.session != null;
+    } catch (_) {
+      await _client.auth.signOut();
+      return false;
+    }
   }
 
   Future<void> signOut() => _client.auth.signOut();

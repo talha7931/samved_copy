@@ -4,7 +4,7 @@ import { STATUS_DISPLAY, STATUS_COLORS, STATUS_ICONS } from '@/lib/constants/sta
 import { BILL_STATUS_DISPLAY, BILL_STATUS_COLORS, SEVERITY_COLORS } from '@/lib/constants/status';
 
 // ============================================================
-// KPI Card
+// KPI Card — premium card with accent bar + hover micro-animation
 // ============================================================
 
 interface KpiCardProps {
@@ -18,31 +18,36 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, trend, accentColor = 'bg-accent', icon, className }: KpiCardProps) {
   return (
-    <div className={cn('kpi-card', className)}>
-      <div className={cn('absolute left-0 top-0 bottom-0 w-1', accentColor)} />
+    <div className={cn('kpi-card group', className)}>
+      <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-r-full', accentColor)} />
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-slate-400 tracking-[0.08em] uppercase mb-1.5">
             {label}
           </p>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-headline font-black text-primary">
+            <span className="text-2xl font-headline font-black text-primary tracking-tight">
               {value}
             </span>
             {trend && (
               <span className={cn(
-                'text-xs font-bold',
+                'text-[11px] font-bold flex items-center gap-0.5',
                 trend.positive ? 'text-success' : 'text-error'
               )}>
-                {trend.positive ? '↑' : '↓'} {trend.value}
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  {trend.positive ? 'trending_up' : 'trending_down'}
+                </span>
+                {trend.value}
               </span>
             )}
           </div>
         </div>
         {icon && (
-          <span className="material-symbols-outlined text-slate-300" style={{ fontSize: 28 }}>
-            {icon}
-          </span>
+          <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-slate-100 transition-colors">
+            <span className="material-symbols-outlined text-slate-300 group-hover:text-slate-400 transition-colors" style={{ fontSize: 22 }}>
+              {icon}
+            </span>
+          </div>
         )}
       </div>
     </div>
@@ -50,7 +55,7 @@ export function KpiCard({ label, value, trend, accentColor = 'bg-accent', icon, 
 }
 
 // ============================================================
-// Status Pill
+// Status Pill — compact, accessible
 // ============================================================
 
 interface StatusPillProps {
@@ -61,8 +66,10 @@ interface StatusPillProps {
 export function StatusPill({ status, className }: StatusPillProps) {
   const colors = STATUS_COLORS[status];
   return (
-    <span className={cn('status-pill', colors.bg, colors.text, `border-${colors.text.replace('text-', '')}/20`, className)}>
-      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+    <span className={cn('status-pill', colors.bg, colors.text, className)}
+      style={{ borderColor: 'currentColor', borderWidth: 1, borderStyle: 'solid', opacity: 0.9 }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
         {STATUS_ICONS[status]}
       </span>
       {STATUS_DISPLAY[status]}
@@ -84,7 +91,7 @@ export function SeverityBadge({ tier, showLabel = true, className }: SeverityBad
   const colors = SEVERITY_COLORS[tier];
   return (
     <span className={cn(
-      'px-2 py-0.5 text-[9px] font-black uppercase tracking-tight rounded inline-flex items-center gap-1',
+      'px-2.5 py-1 text-[9px] font-black uppercase tracking-tight rounded-md inline-flex items-center gap-1',
       colors.bg, colors.text, className
     )}>
       <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
@@ -108,7 +115,7 @@ export function BillStatusPill({ status, className }: BillStatusPillProps) {
   const colors = BILL_STATUS_COLORS[status];
   return (
     <span className={cn(
-      'px-2 py-0.5 text-[9px] font-black uppercase rounded',
+      'px-2.5 py-1 text-[9px] font-black uppercase rounded-md',
       colors.bg, colors.text, className
     )}>
       {BILL_STATUS_DISPLAY[status]}
@@ -117,7 +124,7 @@ export function BillStatusPill({ status, className }: BillStatusPillProps) {
 }
 
 // ============================================================
-// Empty State
+// Empty State — refined with subtle illustration feel
 // ============================================================
 
 interface EmptyStateProps {
@@ -129,16 +136,18 @@ interface EmptyStateProps {
 export function EmptyState({ icon, message, className }: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center py-16 text-center', className)}>
-      <span className="material-symbols-outlined text-slate-300 mb-3" style={{ fontSize: 48 }}>
-        {icon}
-      </span>
-      <p className="text-sm text-slate-400 font-medium">{message}</p>
+      <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
+        <span className="material-symbols-outlined text-slate-300" style={{ fontSize: 32 }}>
+          {icon}
+        </span>
+      </div>
+      <p className="text-sm text-slate-400 font-medium max-w-xs">{message}</p>
     </div>
   );
 }
 
 // ============================================================
-// Loading Skeleton
+// Loading Skeleton — smooth shimmer effect
 // ============================================================
 
 interface SkeletonProps {
@@ -147,22 +156,22 @@ interface SkeletonProps {
 
 export function Skeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('animate-pulse bg-slate-200 rounded', className)} />
+    <div className={cn('shimmer rounded', className)} />
   );
 }
 
 export function KpiSkeleton() {
   return (
     <div className="kpi-card">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-200" />
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-200 rounded-r-full" />
       <Skeleton className="h-3 w-20 mb-3" />
-      <Skeleton className="h-8 w-16" />
+      <Skeleton className="h-7 w-16" />
     </div>
   );
 }
 
 // ============================================================
-// Export Button
+// Export Button — refined with hover state
 // ============================================================
 
 interface ExportButtonProps {
@@ -176,8 +185,9 @@ export function ExportButton({ label = 'Export CSV', onClick, className }: Expor
     <button
       onClick={onClick}
       className={cn(
-        'px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold rounded',
-        'flex items-center gap-2 transition-colors active:scale-95',
+        'px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg',
+        'flex items-center gap-2 transition-all duration-200 active:scale-[0.97] border border-slate-200/80',
+        'hover:shadow-sm',
         className
       )}
     >
@@ -190,7 +200,7 @@ export function ExportButton({ label = 'Export CSV', onClick, className }: Expor
 }
 
 // ============================================================
-// Alert Banner (for escalation rules)
+// Alert Banner — refined with icon background
 // ============================================================
 
 interface AlertBannerProps {
@@ -204,26 +214,33 @@ interface AlertBannerProps {
 
 export function AlertBanner({ variant, icon, title, description, count, className }: AlertBannerProps) {
   const variantStyles = {
-    warning: 'bg-amber-50 border-amber-200 text-amber-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    warning: 'bg-amber-50 border-amber-200/80 text-amber-800',
+    error: 'bg-red-50 border-red-200/80 text-red-800',
+    info: 'bg-blue-50 border-blue-200/80 text-blue-800',
+  };
+  const iconBg = {
+    warning: 'bg-amber-100',
+    error: 'bg-red-100',
+    info: 'bg-blue-100',
   };
 
   return (
     <div className={cn(
-      'flex items-center gap-3 px-4 py-3 rounded-xl border',
+      'flex items-center gap-4 px-5 py-4 rounded-xl border',
       variantStyles[variant],
       className
     )}>
-      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-        {icon || (variant === 'error' ? 'error' : variant === 'warning' ? 'warning' : 'info')}
-      </span>
+      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', iconBg[variant])}>
+        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+          {icon || (variant === 'error' ? 'error' : variant === 'warning' ? 'warning' : 'info')}
+        </span>
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold">{title}</p>
-        <p className="text-[10px] opacity-80">{description}</p>
+        <p className="text-[10px] opacity-80 mt-0.5">{description}</p>
       </div>
       {count !== undefined && (
-        <span className="text-lg font-headline font-black">{count}</span>
+        <span className="text-xl font-headline font-black">{count}</span>
       )}
     </div>
   );

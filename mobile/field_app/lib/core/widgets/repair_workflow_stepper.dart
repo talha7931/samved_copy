@@ -26,15 +26,15 @@ class RepairWorkflowStepper extends StatelessWidget {
                   if (i > 0)
                     Expanded(
                       child: Container(
-                        height: 2,
+                        height: 4,
                         color: i <= currentIndex
                             ? cs.primary
                             : cs.outline.withValues(alpha: 0.30),
                       ),
                     ),
                   Container(
-                    width: 24,
-                    height: 24,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: active ? cs.primary : cs.surfaceContainerHighest,
                       shape: BoxShape.circle,
@@ -44,14 +44,14 @@ class RepairWorkflowStepper extends StatelessWidget {
                     ),
                     child: Icon(
                       i < currentIndex ? Icons.check : Icons.circle,
-                      size: i < currentIndex ? 14 : 8,
+                      size: i < currentIndex ? 16 : 10,
                       color: active ? cs.onPrimary : cs.onSurfaceVariant,
                     ),
                   ),
                   if (i < _labels.length - 1)
                     Expanded(
                       child: Container(
-                        height: 2,
+                        height: 4,
                         color: i < currentIndex
                             ? cs.primary
                             : cs.outline.withValues(alpha: 0.30),

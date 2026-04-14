@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/status_labels.dart';
+import '../theme/theme.dart';
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
@@ -10,13 +11,16 @@ class StatusBadge extends StatelessWidget {
   ({Color bg, Color fg}) _colors(ColorScheme cs) {
     switch (status) {
       case 'resolved':
-        return (bg: const Color(0xFFE0F4E8), fg: const Color(0xFF0F6B35));
+        final color = AppDesign.severityColor(cs, 'resolved');
+        return (bg: color.withValues(alpha: 0.14), fg: color);
       case 'rejected':
         return (bg: cs.errorContainer, fg: cs.onErrorContainer);
       case 'audit_pending':
-        return (bg: const Color(0xFFFFF2DC), fg: const Color(0xFF8F5A00));
+        final color = AppDesign.severityColor(cs, 'high');
+        return (bg: color.withValues(alpha: 0.14), fg: color);
       case 'in_progress':
-        return (bg: const Color(0xFFE6F0FF), fg: const Color(0xFF1B4E9B));
+        final color = AppDesign.severityColor(cs, 'medium');
+        return (bg: color.withValues(alpha: 0.14), fg: color);
       case 'assigned':
       case 'verified':
       case 'open':
@@ -32,6 +36,7 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final c = _colors(cs);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -41,11 +46,10 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         ticketStatusLabel(status),
-        style: TextStyle(
-          fontSize: 11,
-          letterSpacing: 0.2,
+        style: tt.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
           color: c.fg,
+          letterSpacing: 0.2,
         ),
       ),
     );

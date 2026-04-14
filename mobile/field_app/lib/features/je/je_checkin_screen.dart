@@ -78,6 +78,13 @@ class _JeCheckInScreenState extends ConsumerState<JeCheckInScreen> {
       setState(() => _busy = false);
       return;
     }
+    if (ticket.status != 'open') {
+      setState(() {
+        _error = 'Site check-in is only allowed while ticket is in Open state.';
+        _busy = false;
+      });
+      return;
+    }
     final loc = ref.read(locationServiceProvider);
     final ok = await loc.ensureLocationPermission();
     if (!ok) {
@@ -137,6 +144,7 @@ class _JeCheckInScreenState extends ConsumerState<JeCheckInScreen> {
       if (!mounted) return;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
       ref.invalidate(jeInboxProvider);
+      ref.invalidate(jeZoneAllTicketsProvider);
       context.go('/je/tickets/${widget.ticketId}/measure');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Check-in recorded')),

@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/theme/theme.dart';
+import '../../core/utils/image_source_sheet.dart';
 import '../../core/widgets/gradient_primary_button.dart';
 import '../../providers/providers.dart';
 import 'ai_result_screen.dart';
@@ -32,11 +34,11 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
   bool _cameraDenied = false;
   bool _locationDenied = false;
 
+  // Keep in sync with AI service standard damage_type values.
   static const _damageTypes = [
     'pothole',
     'crack',
     'surface_failure',
-    'cave_in',
   ];
 
   @override
@@ -51,8 +53,8 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
     return e.isNotEmpty ? e : '.jpg';
   }
 
-  Future<void> _pickPhoto() async {
-    if (!kIsWeb) {
+  Future<void> _pickPhotoFrom(ImageSource source) async {
+    if (!kIsWeb && source == ImageSource.camera) {
       final cam = await Permission.camera.request();
       if (!cam.isGranted) {
         setState(() => _cameraDenied = true);
@@ -63,16 +65,21 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
       _cameraDenied = false;
       _error = null;
     });
-    final x = await ImagePicker().pickImage(
-      source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
-      imageQuality: 85,
-    );
+    final x = await ImagePicker().pickImage(source: source, imageQuality: 85);
     if (x == null) return;
     final bytes = await x.readAsBytes();
     setState(() {
       _photoBytes = bytes;
       _photoExt = _extensionFor(x);
     });
+  }
+
+  Future<void> _pickPhoto() async {
+    final source = kIsWeb
+        ? ImageSource.gallery
+        : await pickImageSourceForNative(context);
+    if (source == null) return;
+    await _pickPhotoFrom(source);
   }
 
   Future<void> _getLocation() async {
@@ -101,7 +108,7 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
       setState(() {
         _error = kIsWeb
             ? 'Choose a photo for the damage (browser testing uses gallery).'
-            : 'Take a photo of the damage.';
+            : 'Take or choose a photo of the damage.';
         _loading = false;
       });
       return;
@@ -141,7 +148,13 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Report damage')),
+      appBar: AppBar(
+        title: const Text('Report damage'),
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppDesign.navyGradient),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -151,9 +164,9 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  cs.primary,
-                  cs.primaryContainer,
+                colors: const [
+                  AppDesign.primaryNavy,
+                  AppDesign.primaryContainerNavy,
                 ],
               ),
             ),
@@ -297,11 +310,7 @@ class _ReportDamageScreenState extends ConsumerState<ReportDamageScreen> {
         color: cs.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1A1C1E).withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
+          ...AppDesign.cardShadow(cs),
         ],
       ),
       padding: const EdgeInsets.all(16),
